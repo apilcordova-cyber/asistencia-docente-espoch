@@ -122,6 +122,17 @@ addCol('institutional_settings', 'coordinator_activation_msg TEXT');
 addCol('attendance_records', 'is_approved INTEGER DEFAULT 0');
 addCol('attendance_records', 'approved_by TEXT');
 addCol('attendance_records', 'approved_at TIMESTAMP');
+addCol('teachers', 'telefono TEXT');
+
+// Actualizar siempre el Coordinador Oficial de la Carrera de Marketing
+try {
+  db.prepare(`
+    UPDATE institutional_settings 
+    SET coordinator_name = 'Ing. Marco Vinicio Salazar Tenelanda',
+        coordinator_title = 'Coordinador de la Carrera de Marketing'
+    WHERE id = 1
+  `).run();
+} catch (e) {}
 
 // 1. Inicializar Catálogo de Jornadas oficiales de Marketing ESPOCH
 const scheduleCount = db.prepare('SELECT COUNT(*) as c FROM schedules').get().c;
@@ -137,7 +148,7 @@ const instCount = db.prepare('SELECT COUNT(*) as c FROM institutional_settings')
 if (instCount === 0) {
   db.prepare(`
     INSERT INTO institutional_settings (id, institution_name, faculty_name, career_name, coordinator_name, coordinator_title, edit_grace_days)
-    VALUES (1, 'Escuela Superior Politécnica de Chimborazo - ESPOCH', 'Facultad de Administración de Empresas - FADE', 'Carrera de Marketing', 'Ing. Coordinador Académico, Mgs.', 'Coordinador(a) de la Carrera de Marketing', 3)
+    VALUES (1, 'Escuela Superior Politécnica de Chimborazo - ESPOCH', 'Facultad de Administración de Empresas - FADE', 'Carrera de Marketing', 'Ing. Marco Vinicio Salazar Tenelanda', 'Coordinador de la Carrera de Marketing', 3)
   `).run();
 }
 
@@ -197,4 +208,90 @@ if (userCount === 0) {
   });
 }
 
+// Función para registrar o actualizar docentes de la matriz (cédula = usuario y contraseña inicial)
+function registrarDocenteMatriz({ cedula, nombre, email_institucional, schedule_id, titulo_academico, custom_hours, telefono }) {
+  if (!cedula || !nombre) return null;
+  const c = cedula.trim();
+  const nom = nombre.trim();
+  const email = (email_institucional && email_institucional.trim()) ? email_institucional.trim() : `${c}@espoch.edu.ec`;
+  const schedId = schedule_id ? parseInt(schedule_id) : 1;
+  const defaultHash = bcrypt.hashSync(c, 10);
+
+  let user = db.prepare('SELECT * FROM users WHERE cedula = ?').get(c);
+  if (!user) {
+    const resU = db.prepare(`
+      INSERT INTO users (cedula, password_hash, role, status)
+      VALUES (?, ?, 'DOCENTE', 'ACTIVO')
+    `).run(c, defaultHash);
+    user = { id: resU.lastInsertRowid, cedula: c };
+  } else {
+    // Si no tiene password_hash o estaba pendiente, activar y poner cédula como contraseña
+    if (!user.password_hash || user.status === 'PENDIENTE_ACTIVACION') {
+      db.prepare("UPDATE users SET password_hash = ?, status = 'ACTIVO' WHERE id = ?").run(defaultHash, user.id);
+    }
+  }
+
+  let teacher = db.prepare('SELECT * FROM teachers WHERE cedula = ?').get(c);
+  if (!teacher) {
+    const resT = db.prepare(`
+      INSERT INTO teachers (user_id, cedula, nombre, email_institucional, schedule_id, titulo_academico, custom_hours, telefono)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(user.id, c, nom, email, schedId, titulo_academico || '', custom_hours || 8.0, telefono || null);
+    teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(resT.lastInsertRowid);
+  } else {
+    db.prepare(`
+      UPDATE teachers
+      SET nombre = ?, email_institucional = COALESCE(NULLIF(?, ''), email_institucional),
+          schedule_id = ?, titulo_academico = COALESCE(?, titulo_academico),
+          telefono = COALESCE(?, telefono)
+      WHERE id = ?
+    `).run(nom, email, schedId, titulo_academico, telefono, teacher.id);
+    teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(teacher.id);
+  }
+
+  return teacher;
+}
+
+// Asegurar que docentes principales estén registrados y activos con cédula como contraseña
+try {
+  registrarDocenteMatriz({
+    cedula: '0604703843',
+    nombre: 'Ariel Enrique Pilco Cordova',
+    email_institucional: 'enrique.pilco@espoch.edu.ec',
+    titulo_academico: 'Ingeniero en Sistemas / Desarrollador',
+    schedule_id: 1,
+    custom_hours: 8.0
+  });
+
+  registrarDocenteMatriz({
+    cedula: '0602328064',
+    nombre: 'Wilian Enrique Pilco Mosquera',
+    email_institucional: 'wilian.pilco@espoch.edu.ec',
+    titulo_academico: 'Magíster en Administración',
+    schedule_id: 2,
+    custom_hours: 8.0
+  });
+} catch (e) {
+  console.error('Error al registrar docentes demo:', e.message);
+}
+
+// Asegurar que el Coordinador Oficial (Ing. Marco Vinicio Salazar Tenelanda CI 0603048703) tenga rol COORDINADOR y estado ACTIVO
+try {
+  const coordHash = bcrypt.hashSync('0603048703', 10);
+  const uMarco = db.prepare('SELECT id FROM users WHERE cedula = ?').get('0603048703');
+  if (uMarco) {
+    db.prepare("UPDATE users SET role = 'COORDINADOR', status = 'ACTIVO', password_hash = ? WHERE id = ?").run(coordHash, uMarco.id);
+  } else {
+    const resU = db.prepare("INSERT INTO users (cedula, password_hash, role, status) VALUES ('0603048703', ?, 'COORDINADOR', 'ACTIVO')").run(coordHash);
+    db.prepare(`
+      INSERT INTO teachers (user_id, cedula, nombre, email_institucional, schedule_id, titulo_academico, custom_hours)
+      VALUES (?, '0603048703', 'Ing. Marco Vinicio Salazar Tenelanda', 'marco.salazar@espoch.edu.ec', 1, 'Coordinador de Carrera', 8.0)
+    `).run(resU.lastInsertRowid);
+  }
+} catch (e) {
+  console.error('Error al configurar coordinador:', e.message);
+}
+
+db.registrarDocenteMatriz = registrarDocenteMatriz;
 module.exports = db;
+

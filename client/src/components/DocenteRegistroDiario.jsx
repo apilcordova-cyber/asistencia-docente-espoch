@@ -543,61 +543,7 @@ export default function DocenteRegistroDiario({ user, usuario }) {
           <span className="text-sm font-semibold">{mensajeError}</span>
         </div>
       )}
-      {/* Selector de Combinaciones Flexibles (8 Horas Totales) */}
-      <div className="bg-white rounded-3xl p-5 border-2 border-[#D7D6D7]/80 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-          <div className="flex items-center space-x-2">
-            <span className="p-1.5 rounded-lg bg-[#A60809]/10 text-[#A60809] font-black text-xs">
-              ⚡
-            </span>
-            <div>
-              <h3 className="text-sm font-black text-slate-900">
-                Combinaciones Flexibles para Completar las 8 Horas Diarias
-              </h3>
-              <p className="text-[11px] text-slate-500">
-                No estás obligado a cumplir 6h en la mañana. Entre las franjas <strong>07h00 a 13h00</strong> (mañana) y <strong>15h00 a 21h00</strong> (tarde) puedes elegir cualquiera de estas combinaciones o personalizar tus horas:
-              </p>
-            </div>
-          </div>
-          <span className="text-[11px] font-extrabold px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl self-start sm:self-auto">
-            Meta Oficial: 8.0 Horas
-          </span>
-        </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          {COMBINACIONES_SUGERIDAS.map((c) => {
-            const esActiva = (mEntrada === c.mIn && mSalida === c.mOut && tEntrada === c.tIn && tSalida === c.tOut);
-            return (
-              <button
-                key={c.id}
-                type="button"
-                disabled={estaBloqueado}
-                onClick={() => aplicarCombinacion(c)}
-                className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                  esActiva
-                    ? 'bg-[#A60809] text-white border-[#A60809] shadow-sm ring-2 ring-[#A60809]/30'
-                    : 'bg-[#F8F9FA] hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-base">{c.icono}</span>
-                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${
-                    esActiva ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-                  }`}>
-                    {c.tag}
-                  </span>
-                </div>
-                <div className="mt-1.5">
-                  <div className="text-xs font-black leading-tight">{c.nombre}</div>
-                  <div className={`text-[10px] mt-0.5 leading-tight ${esActiva ? 'text-white/80' : 'text-slate-500'}`}>
-                    {c.desc}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Barra de Navegación de Doble Marcación (2 Tiempos) */}
       <div className="bg-white rounded-3xl p-3 border border-[#D7D6D7]/80 shadow-xs grid grid-cols-1 sm:grid-cols-3 gap-2">

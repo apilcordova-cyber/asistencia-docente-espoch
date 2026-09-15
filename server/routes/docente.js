@@ -10,11 +10,60 @@ router.use(requireDocente);
 router.get('/perfil', (req, res) => {
   try {
     const inst = db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
-    res.json({
-      ...req.teacher,
-      docente: req.teacher,
-      teacher: req.teacher,
+    const teacher = db.prepare(`
+      SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
+      FROM teachers t
+      JOIN schedules s ON t.schedule_id = s.id
+      WHERE t.id = ?
+    `).get(req.teacher.id);
+
+    const data = {
+      ...(teacher || req.teacher),
+      nombre: (teacher || req.teacher).nombre,
+      email: (teacher || req.teacher).email_institucional,
+      email_institucional: (teacher || req.teacher).email_institucional,
+      telefono: (teacher || req.teacher).telefono || '',
+      titulo_academico: (teacher || req.teacher).titulo_academico || '',
+      docente: teacher || req.teacher,
+      teacher: teacher || req.teacher,
       institucion: inst
+    };
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Modificar datos personales e institucionales del docente
+router.put('/perfil', (req, res) => {
+  try {
+    const { nombre, email_institucional, email, titulo_academico, telefono } = req.body;
+
+    const nombreFinal = (nombre && nombre.trim()) ? nombre.trim() : req.teacher.nombre;
+    const emailFinal = (email_institucional && email_institucional.trim())
+      ? email_institucional.trim()
+      : ((email && email.trim()) ? email.trim() : req.teacher.email_institucional);
+    const tituloFinal = titulo_academico !== undefined ? titulo_academico.trim() : (req.teacher.titulo_academico || '');
+    const telFinal = telefono !== undefined ? telefono.trim() : (req.teacher.telefono || '');
+
+    db.prepare(`
+      UPDATE teachers
+      SET nombre = ?, email_institucional = ?, titulo_academico = ?, telefono = ?
+      WHERE id = ?
+    `).run(nombreFinal, emailFinal, tituloFinal, telFinal, req.teacher.id);
+
+    const updated = db.prepare(`
+      SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
+      FROM teachers t
+      JOIN schedules s ON t.schedule_id = s.id
+      WHERE t.id = ?
+    `).get(req.teacher.id);
+
+    res.json({
+      success: true,
+      message: 'Datos personales y de contacto actualizados correctamente',
+      docente: updated,
+      teacher: updated
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

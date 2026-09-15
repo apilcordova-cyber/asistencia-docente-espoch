@@ -27,15 +27,15 @@ export default function DocenteNavbar({
     .toUpperCase() || 'DOC';
 
   return (
-    <header className="bg-white border-b border-[#D7D6D7]/80 sticky top-0 z-30 shadow-xs select-none">
+    <header className="bg-white border-b border-[#D7D6D7]/80 sticky top-0 z-30 shadow-xs select-none w-full max-w-full overflow-x-clip">
       {/* Barra superior con identidad Marketing ESPOCH */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full">
+        <div className="flex items-center justify-between h-16 gap-2">
           
-          <EspochLogo variant="horizontal" className="h-10" />
+          <EspochLogo variant="horizontal" className="h-9 sm:h-10 flex-shrink-0" />
 
           {/* Datos del Docente conectado */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-1.5 sm:space-x-3 min-w-0 flex-shrink">
             
             {/* Badge de Jornada Oficial (8 horas combinables) */}
             <div className="hidden lg:flex items-center px-3 py-1.5 rounded-xl bg-[#A60809]/10 text-[#A60809] border border-[#A60809]/20 text-xs font-bold">
@@ -44,13 +44,13 @@ export default function DocenteNavbar({
             </div>
 
             {/* Perfil */}
-            <div className="flex items-center bg-[#F8F9FA] border border-[#D7D6D7] rounded-xl p-1.5 px-2.5 sm:px-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#A60809] text-white flex items-center justify-center font-bold text-xs mr-2 shadow-2xs flex-shrink-0">
+            <div className="flex items-center bg-[#F8F9FA] border border-[#D7D6D7] rounded-xl p-1 sm:p-1.5 px-2 sm:px-3 min-w-0 max-w-[130px] xs:max-w-[160px] sm:max-w-[240px]">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#A60809] text-white flex items-center justify-center font-bold text-xs mr-1.5 sm:mr-2 shadow-2xs flex-shrink-0">
                 {initials}
               </div>
-              <div className="text-left mr-1 sm:mr-2 min-w-0">
+              <div className="text-left min-w-0 flex-1">
                 <div className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden sm:block">Docente Titular / Ocasional</div>
-                <div className="text-xs font-bold text-slate-900 truncate max-w-[110px] sm:max-w-[200px]">
+                <div className="text-xs font-bold text-slate-900 truncate">
                   {displayName}
                 </div>
               </div>
@@ -59,7 +59,7 @@ export default function DocenteNavbar({
             {/* Botón Salir */}
             <button
               onClick={onLogout}
-              className="p-2 text-slate-400 hover:text-[#A60809] hover:bg-[#A60809]/10 rounded-xl transition-all cursor-pointer flex-shrink-0 touch-manipulation"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-[#A60809] hover:bg-[#A60809]/10 rounded-xl transition-all cursor-pointer flex-shrink-0 touch-manipulation"
               title="Cerrar sesión"
             >
               <LogOut className="w-4 h-4" />
@@ -71,8 +71,8 @@ export default function DocenteNavbar({
       </div>
 
       {/* Pestañas de Navegación Exclusivas del Docente */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-[#ECEAEB]">
-        <nav className="flex space-x-1 sm:space-x-3 py-2 overflow-x-auto touch-pan-x scrollbar-none">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 border-t border-[#ECEAEB] w-full overflow-x-auto scrollbar-none">
+        <nav className="flex space-x-1 sm:space-x-3 py-2 min-w-max">
           <button
             type="button"
             onClick={() => setTab && setTab('registro')}

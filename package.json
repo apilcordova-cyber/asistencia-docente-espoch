@@ -4,9 +4,8 @@
   "description": "Sistema de Control de Asistencia y Jornada Laboral Docente - Marketing ESPOCH 2026",
   "main": "server/index.js",
   "scripts": {
+    "build": "npm install && npm install --prefix server && npm install --prefix client && npm run build --prefix client",
     "start": "node server/index.js",
-    "build": "npm install --prefix client && npm run build --prefix client",
-    "postinstall": "npm install --prefix server && npm install --prefix client",
     "dev:server": "node server/index.js",
     "dev:client": "npm run dev --prefix client"
   },

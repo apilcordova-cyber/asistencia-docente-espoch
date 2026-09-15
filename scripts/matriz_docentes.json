@@ -1,0 +1,290 @@
+[
+  {
+    "cedula": "0916255011",
+    "nombre": "Hector Oswaldo Aguilar Cajas",
+    "email_institucional": "hector.aguilar@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0601694607",
+    "nombre": "Jorge Washington Alvarez Calderon",
+    "email_institucional": "jorge.alvarez@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603510736",
+    "nombre": "Freddy Marco Armijos Arcos",
+    "email_institucional": "freddy.armijos@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0602638140",
+    "nombre": "Victor Gabriel Avalos Peñafiel",
+    "email_institucional": "victor.avalos@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603338310",
+    "nombre": "Victor Patricio Camacho Gaibor",
+    "email_institucional": "victor.camacho@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0604082255",
+    "nombre": "Silvia Narcisa Cazar Costales",
+    "email_institucional": "silvia.cazar@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603059304",
+    "nombre": "Carlos Augusto Delgado Rodriguez",
+    "email_institucional": "carlos.delgado@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0601817067",
+    "nombre": "Fausto Marcelo Donoso Valdiviezo",
+    "email_institucional": "fausto.donoso@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603468729",
+    "nombre": "Maria Elena Espin Oleas",
+    "email_institucional": "maria.espin@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0201534211",
+    "nombre": "Maria Isabel Gavilanez Vega",
+    "email_institucional": "maria.gavilanez@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603618620",
+    "nombre": "Ximena Patricia Granizo Espinoza",
+    "email_institucional": "ximena.granizo@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0601900087",
+    "nombre": "Sonia Enriqueta Guadalupe Arias",
+    "email_institucional": "sonia.guadalupe@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603592981",
+    "nombre": "Maria Fernanda Herrera Chico",
+    "email_institucional": "maria.herrera@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0602897803",
+    "nombre": "Mauricio Huilca Cabay",
+    "email_institucional": "mauricio.huilca@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0601986698",
+    "nombre": "Edwin Marcelo Jijon Paredes",
+    "email_institucional": "edwin.jijon@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "1804642062",
+    "nombre": "Alex Santiago Mantilla Miranda",
+    "email_institucional": "alex.mantilla@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0602493256",
+    "nombre": "Yolanda Patricia Moncayo Sanchez",
+    "email_institucional": "yolanda.moncayo@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0601821275",
+    "nombre": "Norberto Hernan Morales Merchan",
+    "email_institucional": "norberto.morales@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603944836",
+    "nombre": "Patricio Xavier Moreno Vallejo",
+    "email_institucional": "patricio.moreno@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0601889082",
+    "nombre": "Hernan Patricio Moyano Vallejo",
+    "email_institucional": "hernan.moyano@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0604108126",
+    "nombre": "Yajaira Natali Padilla Padilla",
+    "email_institucional": "yajaira.padilla@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0602040784",
+    "nombre": "Julio Patricio Paredes Zuñiga",
+    "email_institucional": "julio.paredes@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603341736",
+    "nombre": "Nelly Patricia Perugachi Cahueñas",
+    "email_institucional": "nelly.perugachi@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0604703843",
+    "nombre": "Ariel Enrique Pilco Cordova",
+    "email_institucional": "enrique.pilco@espoch.edu.ec",
+    "titulo_academico": "Ingeniero en Sistemas / Desarrollador",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0602328064",
+    "nombre": "Wilian Enrique Pilco Mosquera",
+    "email_institucional": "wilian.pilco@espoch.edu.ec",
+    "titulo_academico": "Magíster en Administración",
+    "schedule_id": 2,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603781410",
+    "nombre": "Maria Alexandra Procel Silva",
+    "email_institucional": "maria.procel@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603713827",
+    "nombre": "Gabriela Cecilia Quirola Quizhpi",
+    "email_institucional": "gabriela.quirola@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603048703",
+    "nombre": "Marco Vinicio Salazar Tenelanda",
+    "email_institucional": "marco.salazar@espoch.edu.ec",
+    "titulo_academico": "Ingeniero / Coordinador de Carrera",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603248030",
+    "nombre": "Roberto Fabian Sanchez Chavez",
+    "email_institucional": "roberto.sanchez@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0601628514",
+    "nombre": "Homero Eudoro Suarez Navarrete",
+    "email_institucional": "homero.suarez@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0602991473",
+    "nombre": "Hugo Santiago Trujillo Chavez",
+    "email_institucional": "hugo.trujillo@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0916079304",
+    "nombre": "Luz Maribel Vallejo Chavez",
+    "email_institucional": "luz.vallejo@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0603259854",
+    "nombre": "Diego Patricio Vallejo Sanchez",
+    "email_institucional": "diego.vallejo@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0917366767",
+    "nombre": "Lenin Enrique Valverde Sanchez",
+    "email_institucional": "lenin.valverde@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0602271124",
+    "nombre": "Jorge Antonio Vasco Vasco",
+    "email_institucional": "jorge.vasco@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  },
+  {
+    "cedula": "0602094120",
+    "nombre": "Harold Alexi Zabala Jarrin",
+    "email_institucional": "harold.zabala@espoch.edu.ec",
+    "titulo_academico": "Docente de la Carrera de Marketing",
+    "schedule_id": 1,
+    "custom_hours": 8.0
+  }
+]

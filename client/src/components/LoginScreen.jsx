@@ -1,11 +1,12 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { EspochLogo } from './EspochLogo';
 import { login, checkActivation, activateAccount } from '../api';
-import { Lock, User, KeyRound, AlertCircle, CheckCircle2, ArrowRight, ShieldCheck, Sparkles, HelpCircle } from 'lucide-react';
+import { Lock, User, KeyRound, AlertCircle, CheckCircle2, ArrowRight, ShieldCheck, Sparkles, HelpCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginScreen({ onLoginSuccess }) {
   const [cedula, setCedula] = useState('');
   const [password, setPassword] = useState('');
+  const [mostrarPassword, setMostrarPassword] = useState(false);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
 
@@ -14,7 +15,9 @@ export default function LoginScreen({ onLoginSuccess }) {
   const [cedulaActivar, setCedulaActivar] = useState('');
   const [docenteParaActivar, setDocenteParaActivar] = useState(null);
   const [nuevaPassword, setNuevaPassword] = useState('');
+  const [mostrarNuevaPassword, setMostrarNuevaPassword] = useState(false);
   const [confirmarPassword, setConfirmarPassword] = useState('');
+  const [mostrarConfirmarPassword, setMostrarConfirmarPassword] = useState(false);
   const [errorActivacion, setErrorActivacion] = useState('');
   const [cargandoActivacion, setCargandoActivacion] = useState(false);
 
@@ -80,11 +83,17 @@ export default function LoginScreen({ onLoginSuccess }) {
   const llenarDemo = (tipo) => {
     setError('');
     if (tipo === 'coord') {
-      setCedula('0601234567');
-      setPassword('Marketing2026*');
+      setCedula('0603048703');
+      setPassword('0603048703');
+    } else if (tipo === 'ariel') {
+      setCedula('0604703843');
+      setPassword('0604703843');
+    } else if (tipo === 'wilian') {
+      setCedula('0602328064');
+      setPassword('0602328064');
     } else if (tipo === 'doc1') {
       setCedula('0609876543');
-      setPassword('Docente2026*');
+      setPassword('0609876543');
     } else if (tipo === 'activar') {
       setMostrarModalActivacion(true);
       setCedulaActivar('0605554443');
@@ -169,13 +178,22 @@ export default function LoginScreen({ onLoginSuccess }) {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
-                  type="password"
+                  type={mostrarPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-[#F9F9FB] border border-[#D7D6D7] rounded-xl text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#A60809] focus:border-[#A60809] focus:outline-none transition-all"
+                  className="w-full pl-10 pr-11 py-2.5 bg-[#F9F9FB] border border-[#D7D6D7] rounded-xl text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#A60809] focus:border-[#A60809] focus:outline-none transition-all"
                 />
+                <button
+                  type="button"
+                  onClick={() => setMostrarPassword(!mostrarPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer"
+                  title={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                >
+                  {mostrarPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -222,15 +240,31 @@ export default function LoginScreen({ onLoginSuccess }) {
               </button>
               <button
                 type="button"
-                onClick={() => llenarDemo('doc1')}
-                className="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg font-bold text-slate-800 border border-[#D7D6D7] transition-all"
+                onClick={() => llenarDemo('ariel')}
+                className="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg font-bold text-[#A60809] border border-[#D7D6D7] transition-all"
+                title="Usuario: 0604703843 / Clave: 0604703843"
               >
-                Docente (Jornada 1)
+                Ariel Pilco
+              </button>
+              <button
+                type="button"
+                onClick={() => llenarDemo('wilian')}
+                className="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg font-bold text-slate-800 border border-[#D7D6D7] transition-all"
+                title="Usuario: 0602328064 / Clave: 0602328064"
+              >
+                Wilian Pilco
+              </button>
+              <button
+                type="button"
+                onClick={() => llenarDemo('doc1')}
+                className="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg font-bold text-slate-600 border border-[#D7D6D7] transition-all"
+              >
+                Carlos Morales
               </button>
               <button
                 type="button"
                 onClick={() => llenarDemo('activar')}
-                className="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg font-bold text-[#A60809] border border-[#D7D6D7] transition-all"
+                className="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg font-bold text-slate-600 border border-[#D7D6D7] transition-all"
               >
                 Probar Activación
               </button>
@@ -330,26 +364,44 @@ export default function LoginScreen({ onLoginSuccess }) {
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Crear Contraseña Personal</label>
-                  <input
-                    type="password"
-                    required
-                    value={nuevaPassword}
-                    onChange={(e) => setNuevaPassword(e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
-                    className="w-full px-3.5 py-2.5 bg-[#F9F9FB] border border-[#D7D6D7] rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#A60809]"
-                  />
+                  <div className="relative">
+                    <input
+                      type={mostrarNuevaPassword ? 'text' : 'password'}
+                      required
+                      value={nuevaPassword}
+                      onChange={(e) => setNuevaPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-[#F9F9FB] border border-[#D7D6D7] rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#A60809]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setMostrarNuevaPassword(!mostrarNuevaPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
+                    >
+                      {mostrarNuevaPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Confirmar Contraseña</label>
-                  <input
-                    type="password"
-                    required
-                    value={confirmarPassword}
-                    onChange={(e) => setConfirmarPassword(e.target.value)}
-                    placeholder="Repite tu contraseña"
-                    className="w-full px-3.5 py-2.5 bg-[#F9F9FB] border border-[#D7D6D7] rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#A60809]"
-                  />
+                  <div className="relative">
+                    <input
+                      type={mostrarConfirmarPassword ? 'text' : 'password'}
+                      required
+                      value={confirmarPassword}
+                      onChange={(e) => setConfirmarPassword(e.target.value)}
+                      placeholder="Repite tu contraseña"
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-[#F9F9FB] border border-[#D7D6D7] rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#A60809]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setMostrarConfirmarPassword(!mostrarConfirmarPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
+                    >
+                      {mostrarConfirmarPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex justify-end space-x-2 pt-2">

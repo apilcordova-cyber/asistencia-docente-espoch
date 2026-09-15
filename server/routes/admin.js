@@ -112,13 +112,17 @@ router.get('/teachers', (req, res) => {
   }
 });
 
-// Crear docente
+// Crear docente (cédula como contraseña inicial y estado ACTIVO)
 router.post('/teachers', (req, res) => {
   try {
-    const { cedula, nombre, email_institucional, schedule_id, titulo_academico } = req.body;
-    if (!cedula || !nombre || !email_institucional) {
-      return res.status(400).json({ error: 'Cédula, nombre y correo institucional son obligatorios' });
+    const { cedula, nombre, email_institucional, schedule_id, titulo_academico, telefono } = req.body;
+    if (!cedula || !nombre) {
+      return res.status(400).json({ error: 'Cédula y nombre son obligatorios' });
     }
+
+    const c = cedula.trim();
+    const nom = nombre.trim();
+    const email = (email_institucional && email_institucional.trim()) ? email_institucional.trim() : `${c}@espoch.edu.ec`;
 
     let targetScheduleId = schedule_id ? parseInt(schedule_id) : null;
     if (!targetScheduleId) {
@@ -126,27 +130,29 @@ router.post('/teachers', (req, res) => {
       targetScheduleId = defSched ? defSched.id : 1;
     }
 
-    const existingUser = db.prepare('SELECT id FROM users WHERE cedula = ?').get(cedula.trim());
+    const existingUser = db.prepare('SELECT id FROM users WHERE cedula = ?').get(c);
     if (existingUser) {
       return res.status(400).json({ error: 'Ya existe un usuario o docente con ese número de cédula' });
     }
 
+    const defaultHash = bcrypt.hashSync(c, 10);
+
     const createTx = db.transaction(() => {
       const u = db.prepare(`
         INSERT INTO users (cedula, password_hash, role, status)
-        VALUES (?, NULL, 'DOCENTE', 'PENDIENTE_ACTIVACION')
-      `).run(cedula.trim());
+        VALUES (?, ?, 'DOCENTE', 'ACTIVO')
+      `).run(c, defaultHash);
 
       const t = db.prepare(`
-        INSERT INTO teachers (user_id, cedula, nombre, email_institucional, schedule_id, titulo_academico)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(u.lastInsertRowid, cedula.trim(), nombre.trim(), email_institucional.trim(), targetScheduleId, titulo_academico || '');
+        INSERT INTO teachers (user_id, cedula, nombre, email_institucional, schedule_id, titulo_academico, custom_hours, telefono)
+        VALUES (?, ?, ?, ?, ?, ?, 8.0, ?)
+      `).run(u.lastInsertRowid, c, nom, email, targetScheduleId, titulo_academico || '', telefono || null);
 
       return t.lastInsertRowid;
     });
 
     const newTeacherId = createTx();
-    logAudit(req.user.id, 'CREAR_DOCENTE', 'teachers', `Creado docente ${nombre} (C.I. ${cedula})`, req.ip);
+    logAudit(req.user.id, 'CREAR_DOCENTE', 'teachers', `Creado docente ${nom} (C.I. ${c}) con contraseña inicial = cédula`, req.ip);
 
     const created = db.prepare(`
       SELECT t.*, u.status as user_status, s.name as schedule_name 
@@ -157,6 +163,31 @@ router.post('/teachers', (req, res) => {
     `).get(newTeacherId);
 
     res.status(201).json(created);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Carga masiva de docentes desde matriz (JSON / Array)
+router.post('/teachers/bulk', (req, res) => {
+  try {
+    const { docentes } = req.body;
+    if (!Array.isArray(docentes) || docentes.length === 0) {
+      return res.status(400).json({ error: 'Se requiere un arreglo de docentes para la carga masiva' });
+    }
+
+    const results = [];
+    for (const item of docentes) {
+      const t = db.registrarDocenteMatriz(item);
+      if (t) results.push(t);
+    }
+
+    logAudit(req.user.id, 'CARGA_MASIVA_DOCENTES', 'teachers', `Cargados/actualizados ${results.length} docentes desde matriz`, req.ip);
+    res.json({
+      success: true,
+      totalProcesados: results.length,
+      docentes: results
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

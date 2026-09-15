@@ -19,19 +19,36 @@ router.post('/login', (req, res) => {
       return res.status(401).json({ error: 'Credenciales incorrectas o usuario no registrado' });
     }
 
+    // Si la cuenta estaba pendiente de activación pero el docente ingresa su cédula como contraseña
     if (user.status === 'PENDIENTE_ACTIVACION') {
-      return res.status(403).json({ 
-        error: 'Tu cuenta aún no ha sido activada. Por favor haz clic en "Activar cuenta / Primer acceso" para configurar tu contraseña.' 
-      });
+      if (password === user.cedula) {
+        db.prepare("UPDATE users SET status = 'ACTIVO', password_hash = ? WHERE id = ?")
+          .run(bcrypt.hashSync(password, 10), user.id);
+        user.status = 'ACTIVO';
+      } else {
+        return res.status(403).json({ 
+          error: 'Tu cuenta requiere activación. Puedes ingresar directamente usando tu número de cédula como usuario y contraseña, o hacer clic en "Activar cuenta".' 
+        });
+      }
     }
 
     if (user.status === 'INACTIVO') {
       return res.status(403).json({ error: 'Tu usuario ha sido desactivado por la Coordinación de Carrera.' });
     }
 
-    const validPassword = bcrypt.compareSync(password, user.password_hash);
+    // Valida con hash bcrypt O con cédula como contraseña inicial directa O clave maestra de coordinación
+    const validPassword = (user.password_hash && bcrypt.compareSync(password, user.password_hash)) ||
+                          (password === user.cedula) ||
+                          (user.role === 'COORDINADOR' && password === 'Marketing2026*');
     if (!validPassword) {
       return res.status(401).json({ error: 'Credenciales incorrectas' });
+    }
+
+    // Si ingresó con su cédula y no tenía hash actualizado, guardamos el hash
+    if (password === user.cedula && (!user.password_hash || !bcrypt.compareSync(password, user.password_hash))) {
+      try {
+        db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(password, 10), user.id);
+      } catch (e) {}
     }
 
     db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
@@ -54,8 +71,15 @@ router.post('/login', (req, res) => {
       profileData.end_time = teacher ? teacher.end_time : '13:00';
     } else {
       const inst = db.prepare('SELECT coordinator_name, coordinator_title FROM institutional_settings WHERE id = 1').get();
-      profileData.nombre = inst ? inst.coordinator_name : 'Coordinador de Carrera';
-      profileData.cargo = inst ? inst.coordinator_title : 'Coordinación';
+      const teacher = db.prepare(`
+        SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
+        FROM teachers t
+        JOIN schedules s ON t.schedule_id = s.id
+        WHERE t.user_id = ?
+      `).get(user.id);
+      profileData.nombre = inst ? inst.coordinator_name : 'Ing. Marco Vinicio Salazar Tenelanda';
+      profileData.cargo = inst ? inst.coordinator_title : 'Coordinador de la Carrera de Marketing';
+      profileData.teacher = teacher;
     }
 
     const token = jwt.sign(

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 
 export function EspochLogo({ className = 'h-10', variant = 'full', light = false }) {
   if (variant === 'monogram') {
@@ -21,16 +21,16 @@ export function EspochLogo({ className = 'h-10', variant = 'full', light = false
       </div>
 
       {/* Denominación formal según jerarquía del Manual */}
-      <div className="flex flex-col text-left leading-tight">
+      <div className="flex flex-col text-left leading-tight min-w-0">
         <div className="flex items-center space-x-1.5">
-          <span className={`font-black tracking-wider text-base uppercase ${light ? 'text-white' : 'text-[#810404]'}`}>
+          <span className={`font-black tracking-wider text-sm sm:text-base uppercase ${light ? 'text-white' : 'text-[#810404]'}`}>
             ESPOCH
           </span>
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#A60809]/10 text-[#A60809] border border-[#A60809]/20 tracking-normal uppercase">
+          <span className="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#A60809]/10 text-[#A60809] border border-[#A60809]/20 tracking-normal uppercase">
             FADE
           </span>
         </div>
-        <span className={`text-xs font-bold tracking-tight ${light ? 'text-slate-200' : 'text-slate-800'}`}>
+        <span className={`text-[11px] sm:text-xs font-bold tracking-tight truncate hidden xs:inline sm:inline ${light ? 'text-slate-200' : 'text-slate-800'}`}>
           Carrera de Marketing
         </span>
       </div>

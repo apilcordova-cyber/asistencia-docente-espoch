@@ -195,6 +195,29 @@ export async function getDocentePerfil() {
   return normalizeTeacher(p);
 }
 
+export async function updateDocentePerfil(payload) {
+  const res = await fetchWithAuth('/docente/perfil', {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  });
+  const updatedTeacher = normalizeTeacher(res.teacher || res.docente || res);
+  const current = getStoredUser();
+  if (current) {
+    const updated = {
+      ...current,
+      nombre: updatedTeacher.nombre,
+      nombres: updatedTeacher.nombres,
+      apellidos: updatedTeacher.apellidos,
+      email: updatedTeacher.email,
+      email_institucional: updatedTeacher.email_institucional,
+      titulo_academico: updatedTeacher.titulo_academico,
+      telefono: updatedTeacher.telefono
+    };
+    setStoredUser(updated);
+  }
+  return updatedTeacher;
+}
+
 export async function getDocenteAsistencias(params = {}) {
   const q = new URLSearchParams(params).toString();
   return fetchWithAuth(`/docente/asistencias?${q}`);
@@ -374,6 +397,7 @@ export const authAPI = {
 
 export const docenteAPI = {
   getPerfil: getDocentePerfil,
+  updatePerfil: updateDocentePerfil,
   getAsistencias: getDocenteAsistencias,
   saveAsistencia: saveDocenteAsistencia,
   getResumen: getDocenteResumen,

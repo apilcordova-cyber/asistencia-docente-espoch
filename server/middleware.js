@@ -1,4 +1,4 @@
-﻿const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const db = require('./db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'Marketing_ESPOCH_SecretKey_2026_ArielPilco';
@@ -31,13 +31,14 @@ function authenticate(req, res, next) {
 
     req.user = user;
 
-    if (user.role === 'DOCENTE') {
-      const teacher = db.prepare(`
-        SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
-        FROM teachers t
-        JOIN schedules s ON t.schedule_id = s.id
-        WHERE t.user_id = ?
-      `).get(user.id);
+    // Cargar perfil docente si existe (aplica a DOCENTE y a COORDINADOR docente)
+    const teacher = db.prepare(`
+      SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
+      FROM teachers t
+      JOIN schedules s ON t.schedule_id = s.id
+      WHERE t.user_id = ?
+    `).get(user.id);
+    if (teacher) {
       req.teacher = teacher;
     }
 
@@ -55,7 +56,7 @@ function requireCoordinator(req, res, next) {
 }
 
 function requireDocente(req, res, next) {
-  if (!req.user || req.user.role !== 'DOCENTE') {
+  if (!req.user || (req.user.role !== 'DOCENTE' && req.user.role !== 'COORDINADOR')) {
     return res.status(403).json({ error: 'Acceso denegado: Vista exclusiva para Docentes' });
   }
   next();

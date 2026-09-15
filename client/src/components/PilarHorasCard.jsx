@@ -75,44 +75,47 @@ export default function PilarHorasCard({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-2">
+      <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         {/* Stepper +/- */}
-        <div className="flex items-center space-x-1.5">
-          <button
-            type="button"
-            onClick={() => ajustar(-0.5)}
-            className="w-9 h-9 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center justify-center font-bold transition-all active:scale-90 touch-manipulation cursor-pointer"
-            title="Restar 0.5h"
-          >
-            <Minus className="w-4 h-4" />
-          </button>
-          <input
-            type="number"
-            step="0.5"
-            min="0"
-            max="24"
-            value={horas}
-            onChange={(e) => setHoras(parseFloat(e.target.value) || 0)}
-            className={`w-14 sm:w-16 text-center font-black bg-white border rounded-xl py-1.5 text-sm sm:text-base focus:outline-none focus:ring-2 ${styles.inputBorder}`}
-          />
-          <button
-            type="button"
-            onClick={() => ajustar(0.5)}
-            className="w-9 h-9 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center justify-center font-bold transition-all active:scale-90 touch-manipulation cursor-pointer"
-            title="Sumar 0.5h"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
+        <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
+          <div className="flex items-center space-x-1.5">
+            <button
+              type="button"
+              onClick={() => ajustar(-0.5)}
+              className="w-9 h-9 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center justify-center font-bold transition-all active:scale-90 touch-manipulation cursor-pointer shadow-2xs"
+              title="Restar 0.5h"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            <input
+              type="number"
+              step="0.5"
+              min="0"
+              max="24"
+              value={horas}
+              onChange={(e) => setHoras(parseFloat(e.target.value) || 0)}
+              className={`w-16 text-center font-black bg-white border rounded-xl py-1.5 text-base focus:outline-none focus:ring-2 ${styles.inputBorder}`}
+            />
+            <button
+              type="button"
+              onClick={() => ajustar(0.5)}
+              className="w-9 h-9 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center justify-center font-bold transition-all active:scale-90 touch-manipulation cursor-pointer shadow-2xs"
+              title="Sumar 0.5h"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+          <span className="text-xs font-bold text-slate-400 sm:hidden">Rápido:</span>
         </div>
 
         {/* Presets rápidos */}
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center flex-wrap gap-1.5 w-full sm:w-auto justify-start sm:justify-end">
           {presets.map((val) => (
             <button
               key={val}
               type="button"
               onClick={() => setHoras(val)}
-              className={`px-2.5 sm:px-3 py-1.5 text-xs rounded-xl font-bold border transition-all touch-manipulation cursor-pointer active:scale-95 ${
+              className={`px-3 py-1.5 text-xs rounded-xl font-bold border transition-all touch-manipulation cursor-pointer active:scale-95 ${
                 horas === val ? styles.btnActive : styles.btnBg
               }`}
             >

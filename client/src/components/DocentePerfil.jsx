@@ -145,9 +145,15 @@ export default function DocentePerfil({ user }) {
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 bg-[#A60809]/10 text-[#810404] px-3 py-1.5 rounded-xl border border-[#A60809]/20 self-start sm:self-auto">
-              <span className="w-2 h-2 rounded-full bg-[#A60809] animate-pulse"></span>
-              <span className="text-xs font-bold uppercase tracking-wider">Docente Activo</span>
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border self-start sm:self-auto ${
+              user?.role === 'COORDINADOR'
+                ? 'bg-amber-50 text-amber-900 border-amber-300'
+                : 'bg-[#A60809]/10 text-[#810404] border-[#A60809]/20'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${user?.role === 'COORDINADOR' ? 'bg-amber-600 animate-pulse' : 'bg-[#A60809] animate-pulse'}`}></span>
+              <span className="text-xs font-bold uppercase tracking-wider">
+                {user?.role === 'COORDINADOR' ? 'Coordinador de Carrera' : 'Docente Activo'}
+              </span>
             </div>
           </div>
 
@@ -159,12 +165,14 @@ export default function DocentePerfil({ user }) {
               </span>
             </div>
             <div className="bg-[#F8F9FA] p-3 rounded-xl border border-[#D7D6D7]/50">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Jornada Laboral Asignada</span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                {user?.role === 'COORDINADOR' ? 'Rol Institucional' : 'Jornada Laboral Asignada'}
+              </span>
               <span className="text-xs sm:text-sm font-bold text-[#A60809] block">
-                {perfil?.schedule_name || 'Jornada Combinable 8h'}
+                {user?.role === 'COORDINADOR' ? 'Coordinación de Carrera' : (perfil?.schedule_name || 'Jornada Combinable 8h')}
               </span>
               <span className="text-[11px] text-slate-500 font-medium">
-                {perfil?.start_time || '07:00'} - {perfil?.end_time || '21:00'}
+                {user?.role === 'COORDINADOR' ? 'Gestión y Docencia Politécnica' : `${perfil?.start_time || '07:00'} - ${perfil?.end_time || '21:00'}`}
               </span>
             </div>
             <div className="bg-[#F8F9FA] p-3 rounded-xl border border-[#D7D6D7]/50">

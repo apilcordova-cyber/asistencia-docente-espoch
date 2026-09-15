@@ -79,27 +79,6 @@ export default function LoginScreen({ onLoginSuccess }) {
     }
   };
 
-  // Relleno rápido para demostración
-  const llenarDemo = (tipo) => {
-    setError('');
-    if (tipo === 'coord') {
-      setCedula('0603048703');
-      setPassword('0603048703');
-    } else if (tipo === 'ariel') {
-      setCedula('0604703843');
-      setPassword('0604703843');
-    } else if (tipo === 'wilian') {
-      setCedula('0602328064');
-      setPassword('0602328064');
-    } else if (tipo === 'doc1') {
-      setCedula('0609876543');
-      setPassword('0609876543');
-    } else if (tipo === 'activar') {
-      setMostrarModalActivacion(true);
-      setCedulaActivar('0605554443');
-      setDocenteParaActivar(null);
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-[#F8F9FA] selection:bg-[#A60809] selection:text-white font-sans text-slate-800">
@@ -223,52 +202,6 @@ export default function LoginScreen({ onLoginSuccess }) {
                 Activar cuenta docente aquí
               </button>
             </p>
-          </div>
-
-          {/* Accesos rápidos demo para presentación */}
-          <div className="bg-[#ECEAEB]/60 p-3 rounded-2xl border border-[#D7D6D7]/80 text-center space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Credenciales de Demostración:
-            </span>
-            <div className="flex items-center justify-center gap-1.5 flex-wrap text-[11px]">
-              <button
-                type="button"
-                onClick={() => llenarDemo('coord')}
-                className="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg font-bold text-[#810404] border border-[#D7D6D7] transition-all"
-              >
-                Coordinador
-              </button>
-              <button
-                type="button"
-                onClick={() => llenarDemo('ariel')}
-                className="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg font-bold text-[#A60809] border border-[#D7D6D7] transition-all"
-                title="Usuario: 0604703843 / Clave: 0604703843"
-              >
-                Ariel Pilco
-              </button>
-              <button
-                type="button"
-                onClick={() => llenarDemo('wilian')}
-                className="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg font-bold text-slate-800 border border-[#D7D6D7] transition-all"
-                title="Usuario: 0602328064 / Clave: 0602328064"
-              >
-                Wilian Pilco
-              </button>
-              <button
-                type="button"
-                onClick={() => llenarDemo('doc1')}
-                className="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg font-bold text-slate-600 border border-[#D7D6D7] transition-all"
-              >
-                Carlos Morales
-              </button>
-              <button
-                type="button"
-                onClick={() => llenarDemo('activar')}
-                className="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg font-bold text-slate-600 border border-[#D7D6D7] transition-all"
-              >
-                Probar Activación
-              </button>
-            </div>
           </div>
 
         </div>

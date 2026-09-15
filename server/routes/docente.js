@@ -6,26 +6,35 @@ const router = express.Router();
 router.use(authenticate);
 router.use(requireDocente);
 
-// Perfil y jornada del docente
+// Perfil y jornada del docente o coordinador
 router.get('/perfil', (req, res) => {
   try {
     const inst = db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
+    let currentTeacher = req.teacher;
+    if (!currentTeacher && req.user.role === 'COORDINADOR') {
+      currentTeacher = db.prepare('SELECT * FROM teachers WHERE cedula = ?').get(req.user.cedula);
+    }
+    if (!currentTeacher) {
+      return res.status(404).json({ error: 'Perfil no encontrado' });
+    }
+
     const teacher = db.prepare(`
       SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
       FROM teachers t
-      JOIN schedules s ON t.schedule_id = s.id
+      LEFT JOIN schedules s ON t.schedule_id = s.id
       WHERE t.id = ?
-    `).get(req.teacher.id);
+    `).get(currentTeacher.id);
 
+    const fullTeacher = teacher || currentTeacher;
     const data = {
-      ...(teacher || req.teacher),
-      nombre: (teacher || req.teacher).nombre,
-      email: (teacher || req.teacher).email_institucional,
-      email_institucional: (teacher || req.teacher).email_institucional,
-      telefono: (teacher || req.teacher).telefono || '',
-      titulo_academico: (teacher || req.teacher).titulo_academico || '',
-      docente: teacher || req.teacher,
-      teacher: teacher || req.teacher,
+      ...fullTeacher,
+      nombre: fullTeacher.nombre,
+      email: fullTeacher.email_institucional,
+      email_institucional: fullTeacher.email_institucional,
+      telefono: fullTeacher.telefono || '',
+      titulo_academico: fullTeacher.titulo_academico || '',
+      docente: fullTeacher,
+      teacher: fullTeacher,
       institucion: inst
     };
     res.json(data);
@@ -34,30 +43,51 @@ router.get('/perfil', (req, res) => {
   }
 });
 
-// Modificar datos personales e institucionales del docente
+// Modificar datos personales e institucionales del docente o coordinador
 router.put('/perfil', (req, res) => {
   try {
+    let currentTeacher = req.teacher;
+    if (!currentTeacher && req.user.role === 'COORDINADOR') {
+      currentTeacher = db.prepare('SELECT * FROM teachers WHERE cedula = ?').get(req.user.cedula);
+    }
+    if (!currentTeacher) {
+      return res.status(404).json({ error: 'Registro docente no encontrado para actualizar' });
+    }
+
     const { nombre, email_institucional, email, titulo_academico, telefono } = req.body;
 
-    const nombreFinal = (nombre && nombre.trim()) ? nombre.trim() : req.teacher.nombre;
+    const nombreFinal = (nombre && nombre.trim()) ? nombre.trim() : currentTeacher.nombre;
     const emailFinal = (email_institucional && email_institucional.trim())
       ? email_institucional.trim()
-      : ((email && email.trim()) ? email.trim() : req.teacher.email_institucional);
-    const tituloFinal = titulo_academico !== undefined ? titulo_academico.trim() : (req.teacher.titulo_academico || '');
-    const telFinal = telefono !== undefined ? telefono.trim() : (req.teacher.telefono || '');
+      : ((email && email.trim()) ? email.trim() : currentTeacher.email_institucional);
+    const tituloFinal = titulo_academico !== undefined ? titulo_academico.trim() : (currentTeacher.titulo_academico || '');
+    const telFinal = telefono !== undefined ? telefono.trim() : (currentTeacher.telefono || '');
 
     db.prepare(`
       UPDATE teachers
       SET nombre = ?, email_institucional = ?, titulo_academico = ?, telefono = ?
       WHERE id = ?
-    `).run(nombreFinal, emailFinal, tituloFinal, telFinal, req.teacher.id);
+    `).run(nombreFinal, emailFinal, tituloFinal, telFinal, currentTeacher.id);
+
+    // Si es coordinador, sincronizar institutional_settings para reportes oficiales
+    if (req.user.role === 'COORDINADOR') {
+      try {
+        db.prepare(`
+          UPDATE institutional_settings
+          SET coordinator_name = ?, coordinator_title = ?
+          WHERE id = 1
+        `).run(nombreFinal, tituloFinal || 'Coordinador Académico');
+      } catch (syncErr) {
+        console.warn('Advertencia al sincronizar institutional_settings:', syncErr.message);
+      }
+    }
 
     const updated = db.prepare(`
       SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
       FROM teachers t
-      JOIN schedules s ON t.schedule_id = s.id
+      LEFT JOIN schedules s ON t.schedule_id = s.id
       WHERE t.id = ?
-    `).get(req.teacher.id);
+    `).get(currentTeacher.id);
 
     res.json({
       success: true,

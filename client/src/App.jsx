@@ -103,6 +103,7 @@ export default function App() {
             {currentTab === 'supervision' && <CoordinadorSupervision />}
             {currentTab === 'reportes' && <CoordinadorReportes />}
             {currentTab === 'configuracion' && <CoordinadorConfiguracion />}
+            {currentTab === 'perfil' && <DocentePerfil user={user} usuario={user} />}
           </>
         ) : (
           <>

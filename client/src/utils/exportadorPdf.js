@@ -229,11 +229,11 @@ export function generarPdfOficial(data) {
   doc.text(institucion?.director_carrera || 'Coordinador(a) de Carrera de Marketing', 155, signatureY + 7, { align: 'center' });
   doc.text('Carrera de Marketing ESPOCH', 155, signatureY + 10, { align: 'center' });
 
-  // Marca de agua y crédito técnico de Ariel Pilco
+  // Marca de agua y crédito técnico MKTAP
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'italic');
   doc.setTextColor(148, 163, 184);
-  doc.text('Plataforma de Control de Asistencia y Jornada Docente • Carrera de Marketing ESPOCH • Desarrollo: Ariel Pilco', 105, pageHeight - 5, { align: 'center' });
+  doc.text('Plataforma de Control de Asistencia y Jornada Docente • Carrera de Marketing ESPOCH • MKTAP', 105, pageHeight - 5, { align: 'center' });
 
   const filename = `Asistencia_Marketing_${nombreCompleto.replace(/\s+/g, '_')}_${mes}.pdf`;
   doc.save(filename);

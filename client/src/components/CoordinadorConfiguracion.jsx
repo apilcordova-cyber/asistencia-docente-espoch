@@ -372,8 +372,8 @@ export default function CoordinadorConfiguracion() {
         <p className="text-[11px] text-gray-500 mt-0.5">
           Carrera de Marketing • Escuela Superior Politécnica de Chimborazo (ESPOCH 2026)
         </p>
-        <p className="text-[11px] font-medium text-[#A60809] mt-1">
-          Diseñado y Desarrollado por: <span className="font-bold underline">Ariel Pilco</span>
+        <p className="text-[11px] font-bold text-[#A60809] mt-1 tracking-wider">
+          MKTAP
         </p>
       </div>
     </div>

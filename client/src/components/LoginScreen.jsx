@@ -211,8 +211,8 @@ export default function LoginScreen({ onLoginSuccess }) {
       <footer className="py-4 px-6 border-t border-[#D7D6D7]/60 bg-white text-center text-xs text-slate-500">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Escuela Superior Politécnica de Chimborazo &bull; Carrera de Marketing</span>
-          <span className="bg-[#ECEAEB] text-slate-700 font-semibold px-2.5 py-0.5 rounded-lg border border-[#D7D6D7]">
-            Desarrollado por: <strong className="text-[#810404]">Ariel Pilco</strong>
+          <span className="bg-[#ECEAEB] text-[#810404] font-bold px-3 py-0.5 rounded-lg border border-[#D7D6D7] tracking-wider text-xs">
+            MKTAP
           </span>
         </div>
       </footer>

@@ -127,8 +127,8 @@ export default function App() {
           <div className="flex items-center gap-2">
             <span>Sistema Institucional de Asistencia Docente</span>
             <span>•</span>
-            <span className="font-medium text-gray-700">
-              Desarrollado por: <strong className="text-[#810404] font-bold">Ariel Pilco</strong>
+            <span className="font-bold text-[#810404] tracking-wider">
+              MKTAP
             </span>
           </div>
         </div>

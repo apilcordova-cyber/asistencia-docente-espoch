@@ -122,21 +122,21 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
         </div>
       </div>
 
-      {/* PANEL DE CONTROL MAESTRO: ACTIVACIÓN DE TURNOS POR EL COORDINADOR */}
+      {/* PANEL DE CONTROL MAESTRO: HABILITACIÓN DIARIA POR EL COORDINADOR */}
       <div className="bg-white rounded-2xl border-2 border-[#A60809]/30 shadow-sm p-6 relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#A60809] text-white">
-                Activación por el Coordinador
+                Control de Coordinación
               </span>
-              <span className="text-xs text-gray-500 font-medium">Control en Tiempo Real</span>
+              <span className="text-xs text-gray-500 font-medium">Habilitación Única Matutina</span>
             </div>
             <h2 className="text-xl font-black text-gray-900 mt-1">
-              Control de Habilitación de Turnos (Mañana / Tarde)
+              Habilitación Diaria de Jornada Docente (8.0 Horas)
             </h2>
             <p className="text-xs text-gray-600 mt-0.5">
-              Como Coordinador de Carrera, tú tienes la llave de activación para permitir que los docentes registren su jornada en cada franja horaria.
+              Con una sola habilitación por la mañana, permites que los docentes registren directamente su jornada completa de todo el día sin etapas separadas.
             </p>
           </div>
 
@@ -160,105 +160,66 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          {/* CONTROL TURNO MATUTINO */}
-          <div className={`p-4 rounded-xl border-2 transition-all ${
-            shiftControl.shift_morning_active === 1
-              ? 'bg-emerald-50/50 border-emerald-300 shadow-xs'
-              : 'bg-gray-50 border-gray-200 opacity-90'
-          }`}>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center space-x-3">
-                <div className={`p-2.5 rounded-xl ${
-                  shiftControl.shift_morning_active === 1 ? 'bg-emerald-600 text-white shadow-xs' : 'bg-gray-300 text-gray-600'
-                }`}>
-                  <Sun className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Franja 07h00 a 13h00</span>
-                  <h3 className="text-base font-black text-gray-900">1. Turno Matutino</h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                      shiftControl.shift_morning_active === 1
-                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                        : 'bg-rose-100 text-rose-800 border border-rose-200'
-                    }`}>
-                      {shiftControl.shift_morning_active === 1 ? '● ACTIVADO POR COORDINACIÓN' : '○ CERRADO / INACTIVO'}
-                    </span>
+        {/* TARJETA UNIFICADA DE HABILITACIÓN DIARIA */}
+        {(() => {
+          const isDayActive = shiftControl.shift_morning_active === 1 || shiftControl.shift_afternoon_active === 1;
+          return (
+            <div className={`p-5 rounded-2xl border-2 transition-all mt-4 ${
+              isDayActive
+                ? 'bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-white border-emerald-300 shadow-xs'
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center space-x-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                    isDayActive ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' : 'bg-gray-300 text-gray-600'
+                  }`}>
+                    <Sun className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase ${
+                        isDayActive
+                          ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                          : 'bg-rose-100 text-rose-800 border border-rose-200'
+                      }`}>
+                        {isDayActive ? '● JORNADA HABILITADA PARA TODO EL DÍA' : '○ JORNADA CERRADA / INACTIVA'}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-black text-gray-900 mt-1">
+                      Registro de Jornada Laboral Docente (07h00 a 21h00)
+                    </h3>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Los docentes pueden ingresar en cualquier momento de la jornada y registrar sus 8 horas reglamentarias con la combinación de funciones que les corresponda.
+                    </p>
                   </div>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={() => handleToggleShift('morning', shiftControl.shift_morning_active !== 1)}
-                disabled={togglingShift === 'morning'}
-                className={`px-4 py-2 rounded-xl text-xs font-black transition-all shadow-xs cursor-pointer ${
-                  shiftControl.shift_morning_active === 1
-                    ? 'bg-rose-700 hover:bg-rose-800 text-white'
-                    : 'bg-emerald-700 hover:bg-emerald-800 text-white'
-                }`}
-              >
-                {togglingShift === 'morning' ? 'Procesando...' : (shiftControl.shift_morning_active === 1 ? 'Cerrar Turno' : 'Activar Turno')}
-              </button>
-            </div>
-            <div className="mt-3 pt-2 border-t border-gray-200/60 flex items-center justify-between text-[11px] text-gray-500">
-              <span>Habilita a los docentes a registrar su jornada matutina (franja 07h00 a 13h00, combinable con la tarde).</span>
-              {shiftControl.last_activation_morning && (
-                <span>Último cambio: {new Date(shiftControl.last_activation_morning).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-              )}
-            </div>
-          </div>
-
-          {/* CONTROL TURNO VESPERTINO */}
-          <div className={`p-4 rounded-xl border-2 transition-all ${
-            shiftControl.shift_afternoon_active === 1
-              ? 'bg-emerald-50/50 border-emerald-300 shadow-xs'
-              : 'bg-gray-50 border-gray-200 opacity-90'
-          }`}>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center space-x-3">
-                <div className={`p-2.5 rounded-xl ${
-                  shiftControl.shift_afternoon_active === 1 ? 'bg-indigo-600 text-white shadow-xs' : 'bg-gray-300 text-gray-600'
-                }`}>
-                  <Moon className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Franja 15h00 a 21h00</span>
-                  <h3 className="text-base font-black text-gray-900">2. Turno Vespertino</h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                      shiftControl.shift_afternoon_active === 1
-                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                        : 'bg-rose-100 text-rose-800 border border-rose-200'
-                    }`}>
-                      {shiftControl.shift_afternoon_active === 1 ? '● ACTIVADO POR COORDINACIÓN' : '○ CERRADO / INACTIVO'}
+                <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleShift('daily', !isDayActive)}
+                    disabled={togglingShift === 'daily'}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm cursor-pointer ${
+                      isDayActive
+                        ? 'bg-rose-700 hover:bg-rose-800 text-white'
+                        : 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                    }`}
+                  >
+                    {togglingShift === 'daily' 
+                      ? 'Procesando...' 
+                      : (isDayActive ? 'Cerrar Jornada Diaria' : '✓ Habilitar Jornada para Todo el Día')}
+                  </button>
+                  {shiftControl.last_activation_morning && (
+                    <span className="text-[11px] text-gray-500 font-medium">
+                      Habilitado a las: {new Date(shiftControl.last_activation_morning).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
-                  </div>
+                  )}
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={() => handleToggleShift('afternoon', shiftControl.shift_afternoon_active !== 1)}
-                disabled={togglingShift === 'afternoon'}
-                className={`px-4 py-2 rounded-xl text-xs font-black transition-all shadow-xs cursor-pointer ${
-                  shiftControl.shift_afternoon_active === 1
-                    ? 'bg-rose-700 hover:bg-rose-800 text-white'
-                    : 'bg-indigo-700 hover:bg-indigo-800 text-white'
-                }`}
-              >
-                {togglingShift === 'afternoon' ? 'Procesando...' : (shiftControl.shift_afternoon_active === 1 ? 'Cerrar Turno' : 'Activar Turno')}
-              </button>
             </div>
-            <div className="mt-3 pt-2 border-t border-gray-200/60 flex items-center justify-between text-[11px] text-gray-500">
-              <span>Habilita a los docentes a completar sus horas vespertinas (franja 15h00 a 21h00) y consolidar las 8h.</span>
-              {shiftControl.last_activation_afternoon && (
-                <span>Último cambio: {new Date(shiftControl.last_activation_afternoon).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-              )}
-            </div>
-          </div>
-        </div>
+          );
+        })()}
       </div>
 
       {/* 4 KPIs Clave */}

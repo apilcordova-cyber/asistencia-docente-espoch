@@ -341,13 +341,13 @@ router.post('/shift-toggle', (req, res) => {
     const { shift, active, message } = req.body;
     const now = new Date().toISOString();
     
-    if (shift === 'morning') {
+    if (shift === 'daily' || shift === 'all' || shift === 'morning') {
       db.prepare(`
         UPDATE institutional_settings 
-        SET shift_morning_active = ?, last_activation_morning = ?, coordinator_activation_msg = COALESCE(?, coordinator_activation_msg)
+        SET shift_morning_active = ?, shift_afternoon_active = ?, last_activation_morning = ?, coordinator_activation_msg = COALESCE(?, coordinator_activation_msg)
         WHERE id = 1
-      `).run(active ? 1 : 0, now, message || null);
-      logAudit(req.user.id, active ? 'ACTIVAR_TURNO_MATUTINO' : 'CERRAR_TURNO_MATUTINO', 'institutional_settings', `Turno matutino ${active ? 'activado' : 'cerrado'} por Coordinación`, req.ip);
+      `).run(active ? 1 : 0, active ? 1 : 0, now, message || null);
+      logAudit(req.user.id, active ? 'ACTIVAR_JORNADA_DIARIA' : 'CERRAR_JORNADA_DIARIA', 'institutional_settings', `Jornada diaria ${active ? 'habilitada' : 'cerrada'} por Coordinación`, req.ip);
     } else if (shift === 'afternoon') {
       db.prepare(`
         UPDATE institutional_settings 
@@ -356,7 +356,7 @@ router.post('/shift-toggle', (req, res) => {
       `).run(active ? 1 : 0, now, message || null);
       logAudit(req.user.id, active ? 'ACTIVAR_TURNO_VESPERTINO' : 'CERRAR_TURNO_VESPERTINO', 'institutional_settings', `Turno vespertino ${active ? 'activado' : 'cerrado'} por Coordinación`, req.ip);
     } else {
-      return res.status(400).json({ error: 'Turno inválido (debe ser morning o afternoon)' });
+      return res.status(400).json({ error: 'Turno inválido (debe ser daily, morning o afternoon)' });
     }
 
     const updated = db.prepare('SELECT shift_morning_active, shift_afternoon_active, shift_mode, last_activation_morning, last_activation_afternoon, coordinator_activation_msg FROM institutional_settings WHERE id = 1').get();

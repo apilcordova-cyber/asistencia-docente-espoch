@@ -195,9 +195,19 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
 
   const handleGuardarAsistencia = async (e) => {
     if (e) e.preventDefault();
-    setCargando(true);
     setMensajeExito('');
     setMensajeError('');
+
+    if (totalHoras !== 8.0) {
+      setMensajeError(
+        totalHoras < 8.0
+          ? `Registro bloqueado: Debe registrar estrictamente las 8.0 horas reglamentarias (actualmente suma ${totalHoras} hrs, faltan ${(8.0 - totalHoras).toFixed(1)} hrs). Ajuste las funciones sustantivas.`
+          : `Registro bloqueado: Su registro excede la jornada de 8.0 horas reglamentarias (actualmente suma ${totalHoras} hrs, sobran ${(totalHoras - 8.0).toFixed(1)} hrs). Debe registrar estrictamente 8.0 horas exactas.`
+      );
+      return;
+    }
+
+    setCargando(true);
 
     let checkInStr = '';
     let checkOutStr = '';
@@ -229,10 +239,8 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
 
     try {
       await saveDocenteAsistencia(payload);
-      setMensajeExito(`¡Jornada diaria completa registrada exitosamente (${totalHoras} horas)!`);
-      if (totalHoras === 8.0) {
-        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-      }
+      setMensajeExito(`¡Jornada diaria completa registrada exitosamente (8.0 horas exactas)!`);
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       await cargarHistorial();
       await cargarRegistroDeFecha();
       setTimeout(() => setMensajeExito(''), 4500);
@@ -596,25 +604,53 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
         {/* 6. BOTÓN DE GUARDADO PRINCIPAL */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
           <div className="text-xs text-slate-500 text-center sm:text-left">
-            {registroExistente ? (
-              <span>Ya tienes un registro guardado para este día. Puedes modificarlo y volver a guardar.</span>
+            {totalHoras !== 8.0 ? (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span>
+                  {totalHoras < 8.0 
+                    ? `Botón bloqueado: Faltan ${(8.0 - totalHoras).toFixed(1)} hrs para completar las 8.0 hrs exactas.` 
+                    : `Botón bloqueado: Excede por ${(totalHoras - 8.0).toFixed(1)} hrs. La jornada debe ser estrictamente de 8.0 hrs.`}
+                </span>
+              </div>
+            ) : registroExistente ? (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-900 border border-emerald-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>8.0 hrs exactas cumplidas. Ya tienes un registro guardado para este día, puedes modificarlo.</span>
+              </div>
             ) : (
-              <span>Al guardar, tu jornada diaria quedará registrada en el servidor institucional.</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-900 border border-emerald-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>8.0 hrs exactas cumplidas. Al guardar, tu jornada diaria quedará registrada en el servidor institucional.</span>
+              </div>
             )}
           </div>
 
           <button
             type="submit"
-            disabled={cargando || estaBloqueado}
-            className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm text-white shadow-md transition-all cursor-pointer flex items-center justify-center space-x-2 ${
-              totalHoras === 8.0
-                ? 'bg-[#A60809] hover:bg-[#810404] shadow-[#A60809]/30'
-                : 'bg-slate-800 hover:bg-slate-900'
-            } disabled:opacity-50`}
+            disabled={cargando || estaBloqueado || totalHoras !== 8.0}
+            title={
+              totalHoras !== 8.0
+                ? `El botón está bloqueado: Debe sumar estrictamente 8.0 horas exactas (actualmente: ${totalHoras} hrs)`
+                : 'Guardar Asistencia de la Jornada'
+            }
+            className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm transition-all flex items-center justify-center space-x-2 ${
+              totalHoras === 8.0 && !estaBloqueado && !cargando
+                ? 'bg-[#A60809] hover:bg-[#810404] text-white shadow-md shadow-[#A60809]/30 cursor-pointer'
+                : 'bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed shadow-none'
+            }`}
           >
-            <Save className="w-5 h-5" />
+            {totalHoras !== 8.0 ? (
+              <Lock className="w-5 h-5 text-slate-400" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
             <span>
-              {cargando ? 'Guardando...' : `Guardar Asistencia de la Jornada (${totalHoras} hrs)`}
+              {cargando 
+                ? 'Guardando...' 
+                : totalHoras !== 8.0 
+                  ? `Bloqueado: Requiere 8.0 hrs exactas (${totalHoras}/8 hrs)` 
+                  : 'Guardar Asistencia de la Jornada (8 hrs)'}
             </span>
           </button>
         </div>

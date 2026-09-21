@@ -203,14 +203,15 @@ router.post('/asistencia', (req, res) => {
     const gest = parseFloat(gestion_hours) || 0;
     const total = parseFloat((doc + vinc + inv + gest).toFixed(2));
 
-    const expectedHours = req.teacher.custom_hours || req.teacher.expected_hours || 8.0;
+    const expectedHours = 8.0;
 
-    let status = 'COMPLETO';
-    if (total < expectedHours) {
-      status = 'INCOMPLETO';
-    } else if (total > expectedHours) {
-      status = 'SOBRETIEMPO';
+    if (total !== expectedHours) {
+      return res.status(400).json({
+        error: `La jornada laboral debe registrar estrictamente las 8.0 horas reglamentarias (actualmente suma ${total} hrs). No se permite guardar menos ni más de 8.0 horas.`
+      });
     }
+
+    const status = 'COMPLETO';
 
     const saveTransaction = db.transaction(() => {
       let recordId;

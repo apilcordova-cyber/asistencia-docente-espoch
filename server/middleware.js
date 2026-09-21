@@ -3,9 +3,9 @@ const db = require('./db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'Marketing_ESPOCH_SecretKey_2026_ArielPilco';
 
-function logAudit(userId, action, targetEntity, details, ip = '127.0.0.1') {
+async function logAudit(userId, action, targetEntity, details, ip = '127.0.0.1') {
   try {
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO audit_logs (user_id, action, target_entity, details, ip_address)
       VALUES (?, ?, ?, ?, ?)
     `).run(userId || null, action, targetEntity || '', details || '', ip);
@@ -14,7 +14,7 @@ function logAudit(userId, action, targetEntity, details, ip = '127.0.0.1') {
   }
 }
 
-function authenticate(req, res, next) {
+async function authenticate(req, res, next) {
   const authHeader = req.headers['authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Acceso no autorizado: Token requerido' });
@@ -23,7 +23,7 @@ function authenticate(req, res, next) {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = db.prepare('SELECT id, cedula, role, status FROM users WHERE id = ?').get(decoded.id);
+    const user = await db.prepare('SELECT id, cedula, role, status FROM users WHERE id = ?').get(decoded.id);
     
     if (!user || user.status === 'INACTIVO') {
       return res.status(401).json({ error: 'Usuario no válido o inactivo' });
@@ -32,7 +32,7 @@ function authenticate(req, res, next) {
     req.user = user;
 
     // Cargar perfil docente si existe (aplica a DOCENTE y a COORDINADOR docente)
-    const teacher = db.prepare(`
+    const teacher = await db.prepare(`
       SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
       FROM teachers t
       JOIN schedules s ON t.schedule_id = s.id

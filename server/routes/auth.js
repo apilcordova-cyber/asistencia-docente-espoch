@@ -7,14 +7,14 @@ const { JWT_SECRET, logAudit, authenticate } = require('../middleware');
 const router = express.Router();
 
 // Iniciar sesión
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { cedula, password } = req.body;
     if (!cedula || !password) {
       return res.status(400).json({ error: 'Cédula y contraseña son requeridas' });
     }
 
-    const user = db.prepare('SELECT * FROM users WHERE cedula = ?').get(cedula.trim());
+    const user = await db.prepare('SELECT * FROM users WHERE cedula = ?').get(cedula.trim());
     if (!user) {
       return res.status(401).json({ error: 'Credenciales incorrectas o usuario no registrado' });
     }
@@ -22,7 +22,7 @@ router.post('/login', (req, res) => {
     // Si la cuenta estaba pendiente de activación pero el docente ingresa su cédula como contraseña
     if (user.status === 'PENDIENTE_ACTIVACION') {
       if (password === user.cedula) {
-        db.prepare("UPDATE users SET status = 'ACTIVO', password_hash = ? WHERE id = ?")
+        await db.prepare("UPDATE users SET status = 'ACTIVO', password_hash = ? WHERE id = ?")
           .run(bcrypt.hashSync(password, 10), user.id);
         user.status = 'ACTIVO';
       } else {
@@ -47,16 +47,16 @@ router.post('/login', (req, res) => {
     // Si ingresó con su cédula y no tenía hash actualizado, guardamos el hash
     if (password === user.cedula && (!user.password_hash || !bcrypt.compareSync(password, user.password_hash))) {
       try {
-        db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(password, 10), user.id);
+        await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(password, 10), user.id);
       } catch (e) {}
     }
 
-    db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
+    await db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
 
     let profileData = { id: user.id, cedula: user.cedula, role: user.role, status: user.status };
 
     if (user.role === 'DOCENTE') {
-      const teacher = db.prepare(`
+      const teacher = await db.prepare(`
         SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
         FROM teachers t
         JOIN schedules s ON t.schedule_id = s.id
@@ -70,8 +70,8 @@ router.post('/login', (req, res) => {
       profileData.start_time = teacher ? teacher.start_time : '07:00';
       profileData.end_time = teacher ? teacher.end_time : '13:00';
     } else {
-      const inst = db.prepare('SELECT coordinator_name, coordinator_title FROM institutional_settings WHERE id = 1').get();
-      const teacher = db.prepare(`
+      const inst = await db.prepare('SELECT coordinator_name, coordinator_title FROM institutional_settings WHERE id = 1').get();
+      const teacher = await db.prepare(`
         SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
         FROM teachers t
         JOIN schedules s ON t.schedule_id = s.id
@@ -97,12 +97,12 @@ router.post('/login', (req, res) => {
 });
 
 // Comprobar cédula para activación
-router.post('/check-activation', (req, res) => {
+router.post('/check-activation', async (req, res) => {
   try {
     const { cedula } = req.body;
     if (!cedula) return res.status(400).json({ error: 'Cédula es requerida' });
 
-    const user = db.prepare('SELECT * FROM users WHERE cedula = ?').get(cedula.trim());
+    const user = await db.prepare('SELECT * FROM users WHERE cedula = ?').get(cedula.trim());
     if (!user) {
       return res.status(404).json({ 
         error: 'El número de cédula no se encuentra registrado en el sistema. Contacta al Coordinador de Carrera para que te dé de alta.' 
@@ -115,7 +115,7 @@ router.post('/check-activation', (req, res) => {
       });
     }
 
-    const teacher = db.prepare(`
+    const teacher = await db.prepare(`
       SELECT t.*, s.name as schedule_name 
       FROM teachers t 
       JOIN schedules s ON t.schedule_id = s.id 
@@ -134,26 +134,26 @@ router.post('/check-activation', (req, res) => {
 });
 
 // Activar cuenta
-router.post('/activate', (req, res) => {
+router.post('/activate', async (req, res) => {
   try {
     const { cedula, password } = req.body;
     if (!cedula || !password || password.length < 6) {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
     }
 
-    const user = db.prepare('SELECT * FROM users WHERE cedula = ?').get(cedula.trim());
+    const user = await db.prepare('SELECT * FROM users WHERE cedula = ?').get(cedula.trim());
     if (!user || user.status !== 'PENDIENTE_ACTIVACION') {
       return res.status(400).json({ error: 'Usuario no habilitado para activación' });
     }
 
     const passwordHash = bcrypt.hashSync(password, 10);
-    db.prepare(`
+    await db.prepare(`
       UPDATE users 
       SET password_hash = ?, status = 'ACTIVO', last_login = CURRENT_TIMESTAMP 
       WHERE id = ?
     `).run(passwordHash, user.id);
 
-    const teacher = db.prepare(`
+    const teacher = await db.prepare(`
       SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
       FROM teachers t
       JOIN schedules s ON t.schedule_id = s.id
@@ -190,7 +190,7 @@ router.post('/activate', (req, res) => {
 });
 
 // Obtener datos del usuario conectado
-router.get('/me', authenticate, (req, res) => {
+router.get('/me', authenticate, async (req, res) => {
   try {
     const user = req.user;
     let profileData = { id: user.id, cedula: user.cedula, role: user.role, status: user.status };
@@ -204,7 +204,7 @@ router.get('/me', authenticate, (req, res) => {
       profileData.start_time = req.teacher ? req.teacher.start_time : '07:00';
       profileData.end_time = req.teacher ? req.teacher.end_time : '13:00';
     } else {
-      const inst = db.prepare('SELECT coordinator_name, coordinator_title FROM institutional_settings WHERE id = 1').get();
+      const inst = await db.prepare('SELECT coordinator_name, coordinator_title FROM institutional_settings WHERE id = 1').get();
       profileData.nombre = inst ? inst.coordinator_name : 'Coordinador de Carrera';
       profileData.cargo = inst ? inst.coordinator_title : 'Coordinación';
     }
@@ -216,20 +216,20 @@ router.get('/me', authenticate, (req, res) => {
 });
 
 // Cambio de contraseña
-router.post('/change-password', authenticate, (req, res) => {
+router.post('/change-password', authenticate, async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
     if (!newPassword || newPassword.length < 6) {
       return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
     }
 
-    const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
+    const user = await db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
     if (!bcrypt.compareSync(oldPassword, user.password_hash)) {
       return res.status(400).json({ error: 'La contraseña actual no es correcta' });
     }
 
     const newHash = bcrypt.hashSync(newPassword, 10);
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, req.user.id);
+    await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, req.user.id);
 
     logAudit(req.user.id, 'CAMBIO_PASSWORD', 'users', 'Usuario actualizó su contraseña', req.ip);
 

@@ -7,18 +7,18 @@ router.use(authenticate);
 router.use(requireDocente);
 
 // Perfil y jornada del docente o coordinador
-router.get('/perfil', (req, res) => {
+router.get('/perfil', async (req, res) => {
   try {
-    const inst = db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
+    const inst = await db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
     let currentTeacher = req.teacher;
     if (!currentTeacher && req.user.role === 'COORDINADOR') {
-      currentTeacher = db.prepare('SELECT * FROM teachers WHERE cedula = ?').get(req.user.cedula);
+      currentTeacher = await db.prepare('SELECT * FROM teachers WHERE cedula = ?').get(req.user.cedula);
     }
     if (!currentTeacher) {
       return res.status(404).json({ error: 'Perfil no encontrado' });
     }
 
-    const teacher = db.prepare(`
+    const teacher = await db.prepare(`
       SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
       FROM teachers t
       LEFT JOIN schedules s ON t.schedule_id = s.id
@@ -44,11 +44,11 @@ router.get('/perfil', (req, res) => {
 });
 
 // Modificar datos personales e institucionales del docente o coordinador
-router.put('/perfil', (req, res) => {
+router.put('/perfil', async (req, res) => {
   try {
     let currentTeacher = req.teacher;
     if (!currentTeacher && req.user.role === 'COORDINADOR') {
-      currentTeacher = db.prepare('SELECT * FROM teachers WHERE cedula = ?').get(req.user.cedula);
+      currentTeacher = await db.prepare('SELECT * FROM teachers WHERE cedula = ?').get(req.user.cedula);
     }
     if (!currentTeacher) {
       return res.status(404).json({ error: 'Registro docente no encontrado para actualizar' });
@@ -63,7 +63,7 @@ router.put('/perfil', (req, res) => {
     const tituloFinal = titulo_academico !== undefined ? titulo_academico.trim() : (currentTeacher.titulo_academico || '');
     const telFinal = telefono !== undefined ? telefono.trim() : (currentTeacher.telefono || '');
 
-    db.prepare(`
+    await db.prepare(`
       UPDATE teachers
       SET nombre = ?, email_institucional = ?, titulo_academico = ?, telefono = ?
       WHERE id = ?
@@ -72,7 +72,7 @@ router.put('/perfil', (req, res) => {
     // Si es coordinador, sincronizar institutional_settings para reportes oficiales
     if (req.user.role === 'COORDINADOR') {
       try {
-        db.prepare(`
+        await db.prepare(`
           UPDATE institutional_settings
           SET coordinator_name = ?, coordinator_title = ?
           WHERE id = 1
@@ -82,7 +82,7 @@ router.put('/perfil', (req, res) => {
       }
     }
 
-    const updated = db.prepare(`
+    const updated = await db.prepare(`
       SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours, s.code as schedule_code
       FROM teachers t
       LEFT JOIN schedules s ON t.schedule_id = s.id
@@ -101,7 +101,7 @@ router.put('/perfil', (req, res) => {
 });
 
 // Asistencias propias
-router.get('/asistencias', (req, res) => {
+router.get('/asistencias', async (req, res) => {
   try {
     const { mes, fecha } = req.query;
     let sql = `
@@ -121,7 +121,7 @@ router.get('/asistencias', (req, res) => {
     }
 
     sql += ' ORDER BY r.date DESC';
-    const records = db.prepare(sql).all(...params);
+    const records = await db.prepare(sql).all(...params);
     res.json(records);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -129,9 +129,9 @@ router.get('/asistencias', (req, res) => {
 });
 
 // Estado de turnos y activación por el Coordinador
-router.get('/shift-status', (req, res) => {
+router.get('/shift-status', async (req, res) => {
   try {
-    const inst = db.prepare(`
+    const inst = await db.prepare(`
       SELECT shift_morning_active, shift_afternoon_active, shift_mode,
              last_activation_morning, last_activation_afternoon, coordinator_activation_msg
       FROM institutional_settings WHERE id = 1
@@ -150,7 +150,7 @@ router.get('/shift-status', (req, res) => {
 });
 
 // Registrar o actualizar asistencia propia
-router.post('/asistencia', (req, res) => {
+router.post('/asistencia', async (req, res) => {
   try {
     const {
       date,
@@ -168,16 +168,15 @@ router.post('/asistencia', (req, res) => {
       return res.status(400).json({ error: 'Fecha, hora de entrada y hora de salida son obligatorios' });
     }
 
-    const inst = db.prepare('SELECT edit_grace_days, shift_morning_active, shift_afternoon_active, shift_mode FROM institutional_settings WHERE id = 1').get();
+    const inst = await db.prepare('SELECT edit_grace_days, shift_morning_active, shift_afternoon_active, shift_mode FROM institutional_settings WHERE id = 1').get();
     const graceDays = inst ? inst.edit_grace_days : 3;
 
-    const existing = db.prepare('SELECT * FROM attendance_records WHERE teacher_id = ? AND date = ?').get(req.teacher.id, date);
+    const existing = await db.prepare('SELECT * FROM attendance_records WHERE teacher_id = ? AND date = ?').get(req.teacher.id, date);
     
     if (existing && existing.is_locked === 1) {
       return res.status(403).json({ error: 'Este registro se encuentra bloqueado. Contacte a Coordinación si requiere corregirlo.' });
     }
 
-    // El sistema se encuentra abierto permanentemente (24/7). Solo se bloquea si el Coordinador lo cerró explícitamente.
     if (inst && inst.shift_mode === 'CERRADO') {
       if (!existing || existing.is_locked === 1) {
         return res.status(403).json({ 
@@ -213,45 +212,39 @@ router.post('/asistencia', (req, res) => {
 
     const status = 'COMPLETO';
 
-    const saveTransaction = db.transaction(() => {
-      let recordId;
-      if (existing) {
-        db.prepare(`
-          UPDATE attendance_records
-          SET check_in = ?, check_out = ?, total_hours = ?, status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `).run(check_in, check_out, total, status, notes || '', existing.id);
-        recordId = existing.id;
+    let recordId;
+    if (existing) {
+      await db.prepare(`
+        UPDATE attendance_records
+        SET check_in = ?, check_out = ?, total_hours = ?, status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(check_in, check_out, total, status, notes || '', existing.id);
+      recordId = existing.id;
 
-        db.prepare(`
-          UPDATE attendance_details
-          SET docencia_hours = ?, vinculacion_hours = ?, investigacion_hours = ?, gestion_hours = ?, activities_detail = ?
-          WHERE record_id = ?
-        `).run(doc, vinc, inv, gest, activities_detail || '', recordId);
-      } else {
-        const r = db.prepare(`
-          INSERT INTO attendance_records (teacher_id, date, check_in, check_out, total_hours, status, notes)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run(req.teacher.id, date, check_in, check_out, total, status, notes || '');
-        recordId = r.lastInsertRowid;
+      await db.prepare(`
+        UPDATE attendance_details
+        SET docencia_hours = ?, vinculacion_hours = ?, investigacion_hours = ?, gestion_hours = ?, activities_detail = ?
+        WHERE record_id = ?
+      `).run(doc, vinc, inv, gest, activities_detail || '', recordId);
+    } else {
+      const r = await db.prepare(`
+        INSERT INTO attendance_records (teacher_id, date, check_in, check_out, total_hours, status, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(req.teacher.id, date, check_in, check_out, total, status, notes || '');
+      recordId = r.lastInsertRowid;
 
-        db.prepare(`
-          INSERT INTO attendance_details (record_id, docencia_hours, vinculacion_hours, investigacion_hours, gestion_hours, activities_detail)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `).run(recordId, doc, vinc, inv, gest, activities_detail || '');
-      }
+      await db.prepare(`
+        INSERT INTO attendance_details (record_id, docencia_hours, vinculacion_hours, investigacion_hours, gestion_hours, activities_detail)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(recordId, doc, vinc, inv, gest, activities_detail || '');
+    }
 
-      return recordId;
-    });
-
-    const savedId = saveTransaction();
-
-    const savedRecord = db.prepare(`
+    const savedRecord = await db.prepare(`
       SELECT r.*, d.docencia_hours, d.vinculacion_hours, d.investigacion_hours, d.gestion_hours, d.activities_detail
       FROM attendance_records r
       JOIN attendance_details d ON r.id = d.record_id
       WHERE r.id = ?
-    `).get(savedId);
+    `).get(recordId);
 
     res.json(savedRecord);
   } catch (error) {
@@ -260,14 +253,14 @@ router.post('/asistencia', (req, res) => {
 });
 
 // Resumen personal del docente
-router.get('/resumen', (req, res) => {
+router.get('/resumen', async (req, res) => {
   try {
     const { mes } = req.query;
     if (!mes) return res.status(400).json({ error: 'Mes (YYYY-MM) es requerido' });
 
     const expectedHours = req.teacher.custom_hours || req.teacher.expected_hours || 8.0;
 
-    const records = db.prepare(`
+    const records = await db.prepare(`
       SELECT r.*, d.docencia_hours, d.vinculacion_hours, d.investigacion_hours, d.gestion_hours, d.activities_detail
       FROM attendance_records r
       JOIN attendance_details d ON r.id = d.record_id
@@ -318,17 +311,17 @@ router.get('/resumen', (req, res) => {
 });
 
 // Estructura completa mensual para PDF del docente
-router.get('/hoja-mes', (req, res) => {
+router.get('/hoja-mes', async (req, res) => {
   try {
     const { mes } = req.query;
     if (!mes) return res.status(400).json({ error: 'Mes (YYYY-MM) es requerido' });
 
-    const inst = db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
-    const holidays = db.prepare('SELECT * FROM holidays WHERE date LIKE ?').all(`${mes}%`);
+    const inst = await db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
+    const holidays = await db.prepare('SELECT * FROM holidays WHERE date LIKE ?').all(`${mes}%`);
     const holidayMap = {};
     holidays.forEach(h => { holidayMap[h.date] = h.description; });
 
-    const records = db.prepare(`
+    const records = await db.prepare(`
       SELECT r.*, d.docencia_hours, d.vinculacion_hours, d.investigacion_hours, d.gestion_hours, d.activities_detail
       FROM attendance_records r
       JOIN attendance_details d ON r.id = d.record_id

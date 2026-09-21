@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { logAudit, authenticate, requireCoordinator } = require('../middleware');
 
@@ -7,21 +8,32 @@ router.use(authenticate);
 router.use(requireCoordinator);
 
 // Dashboard general
-router.get('/dashboard', (req, res) => {
+router.get('/dashboard', async (req, res) => {
   try {
     const todayStr = new Date().toISOString().split('T')[0];
     const currentMonth = todayStr.substring(0, 7);
 
-    const totalTeachers = db.prepare('SELECT COUNT(*) as c FROM teachers').get().c;
-    const activeTeachers = db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'DOCENTE' AND status = 'ACTIVO'").get().c;
-    const pendingActivation = db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'DOCENTE' AND status = 'PENDIENTE_ACTIVACION'").get().c;
+    const totalTeachersRow = await db.prepare('SELECT COUNT(*) as c FROM teachers').get();
+    const totalTeachers = totalTeachersRow ? totalTeachersRow.c : 0;
 
-    const markedToday = db.prepare('SELECT COUNT(*) as c FROM attendance_records WHERE date = ?').get(todayStr).c;
-    const completedToday = db.prepare('SELECT COUNT(*) as c FROM attendance_records WHERE date = ? AND total_hours >= 8.0').get(todayStr).c;
-    const incompleteToday = db.prepare('SELECT COUNT(*) as c FROM attendance_records WHERE date = ? AND total_hours < 8.0').get(todayStr).c;
+    const activeTeachersRow = await db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'DOCENTE' AND status = 'ACTIVO'").get();
+    const activeTeachers = activeTeachersRow ? activeTeachersRow.c : 0;
+
+    const pendingActivationRow = await db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'DOCENTE' AND status = 'PENDIENTE_ACTIVACION'").get();
+    const pendingActivation = pendingActivationRow ? pendingActivationRow.c : 0;
+
+    const markedTodayRow = await db.prepare('SELECT COUNT(*) as c FROM attendance_records WHERE date = ?').get(todayStr);
+    const markedToday = markedTodayRow ? markedTodayRow.c : 0;
+
+    const completedTodayRow = await db.prepare('SELECT COUNT(*) as c FROM attendance_records WHERE date = ? AND total_hours >= 8.0').get(todayStr);
+    const completedToday = completedTodayRow ? completedTodayRow.c : 0;
+
+    const incompleteTodayRow = await db.prepare('SELECT COUNT(*) as c FROM attendance_records WHERE date = ? AND total_hours < 8.0').get(todayStr);
+    const incompleteToday = incompleteTodayRow ? incompleteTodayRow.c : 0;
+
     const pendingToday = Math.max(0, activeTeachers - markedToday);
 
-    const monthlyStats = db.prepare(`
+    const monthlyStats = (await db.prepare(`
       SELECT 
         SUM(d.docencia_hours) as sum_doc,
         SUM(d.vinculacion_hours) as sum_vinc,
@@ -31,9 +43,9 @@ router.get('/dashboard', (req, res) => {
       FROM attendance_records r
       JOIN attendance_details d ON r.id = d.record_id
       WHERE r.date LIKE ?
-    `).get(`${currentMonth}%`);
+    `).get(`${currentMonth}%`)) || {};
 
-    const teachersWithoutToday = db.prepare(`
+    const teachersWithoutToday = await db.prepare(`
       SELECT t.id, t.nombre, t.cedula, s.name as schedule_name, s.code as schedule_code
       FROM teachers t
       JOIN schedules s ON t.schedule_id = s.id
@@ -43,8 +55,11 @@ router.get('/dashboard', (req, res) => {
       ORDER BY s.code ASC, t.nombre ASC
     `).all(todayStr);
 
-    const j1Count = db.prepare('SELECT COUNT(*) as c FROM teachers WHERE schedule_id = 1').get().c;
-    const j2Count = db.prepare('SELECT COUNT(*) as c FROM teachers WHERE schedule_id = 2').get().c;
+    const j1Row = await db.prepare('SELECT COUNT(*) as c FROM teachers WHERE schedule_id = 1').get();
+    const j1Count = j1Row ? j1Row.c : 0;
+
+    const j2Row = await db.prepare('SELECT COUNT(*) as c FROM teachers WHERE schedule_id = 2').get();
+    const j2Count = j2Row ? j2Row.c : 0;
 
     const totalHorasMes = parseFloat((monthlyStats.sum_total || 0).toFixed(2));
     const docMes = parseFloat((monthlyStats.sum_doc || 0).toFixed(2));
@@ -102,9 +117,9 @@ router.get('/dashboard', (req, res) => {
 });
 
 // Lista de docentes
-router.get('/teachers', (req, res) => {
+router.get('/teachers', async (req, res) => {
   try {
-    const teachers = db.prepare(`
+    const teachers = await db.prepare(`
       SELECT t.*, u.status as user_status, u.created_at as account_created, u.last_login,
              s.name as schedule_name, s.code as schedule_code, s.expected_hours
       FROM teachers t
@@ -119,7 +134,7 @@ router.get('/teachers', (req, res) => {
 });
 
 // Crear docente (cédula como contraseña inicial y estado ACTIVO)
-router.post('/teachers', (req, res) => {
+router.post('/teachers', async (req, res) => {
   try {
     const { cedula, nombre, email_institucional, schedule_id, titulo_academico, telefono } = req.body;
     if (!cedula || !nombre) {
@@ -132,35 +147,32 @@ router.post('/teachers', (req, res) => {
 
     let targetScheduleId = schedule_id ? parseInt(schedule_id) : null;
     if (!targetScheduleId) {
-      const defSched = db.prepare('SELECT id FROM schedules ORDER BY id ASC LIMIT 1').get();
+      const defSched = await db.prepare('SELECT id FROM schedules ORDER BY id ASC LIMIT 1').get();
       targetScheduleId = defSched ? defSched.id : 1;
     }
 
-    const existingUser = db.prepare('SELECT id FROM users WHERE cedula = ?').get(c);
+    const existingUser = await db.prepare('SELECT id FROM users WHERE cedula = ?').get(c);
     if (existingUser) {
       return res.status(400).json({ error: 'Ya existe un usuario o docente con ese número de cédula' });
     }
 
     const defaultHash = bcrypt.hashSync(c, 10);
 
-    const createTx = db.transaction(() => {
-      const u = db.prepare(`
-        INSERT INTO users (cedula, password_hash, role, status)
-        VALUES (?, ?, 'DOCENTE', 'ACTIVO')
-      `).run(c, defaultHash);
+    const u = await db.prepare(`
+      INSERT INTO users (cedula, password_hash, role, status)
+      VALUES (?, ?, 'DOCENTE', 'ACTIVO')
+    `).run(c, defaultHash);
 
-      const t = db.prepare(`
-        INSERT INTO teachers (user_id, cedula, nombre, email_institucional, schedule_id, titulo_academico, custom_hours, telefono)
-        VALUES (?, ?, ?, ?, ?, ?, 8.0, ?)
-      `).run(u.lastInsertRowid, c, nom, email, targetScheduleId, titulo_academico || '', telefono || null);
+    const t = await db.prepare(`
+      INSERT INTO teachers (user_id, cedula, nombre, email_institucional, schedule_id, titulo_academico, custom_hours, telefono)
+      VALUES (?, ?, ?, ?, ?, ?, 8.0, ?)
+    `).run(u.lastInsertRowid, c, nom, email, targetScheduleId, titulo_academico || '', telefono || null);
 
-      return t.lastInsertRowid;
-    });
+    const newTeacherId = t.lastInsertRowid;
 
-    const newTeacherId = createTx();
     logAudit(req.user.id, 'CREAR_DOCENTE', 'teachers', `Creado docente ${nom} (C.I. ${c}) con contraseña inicial = cédula`, req.ip);
 
-    const created = db.prepare(`
+    const created = await db.prepare(`
       SELECT t.*, u.status as user_status, s.name as schedule_name 
       FROM teachers t 
       JOIN users u ON t.user_id = u.id 
@@ -175,7 +187,7 @@ router.post('/teachers', (req, res) => {
 });
 
 // Carga masiva de docentes desde matriz (JSON / Array)
-router.post('/teachers/bulk', (req, res) => {
+router.post('/teachers/bulk', async (req, res) => {
   try {
     const { docentes } = req.body;
     if (!Array.isArray(docentes) || docentes.length === 0) {
@@ -184,7 +196,7 @@ router.post('/teachers/bulk', (req, res) => {
 
     const results = [];
     for (const item of docentes) {
-      const t = db.registrarDocenteMatriz(item);
+      const t = await db.registrarDocenteMatriz(item);
       if (t) results.push(t);
     }
 
@@ -200,34 +212,32 @@ router.post('/teachers/bulk', (req, res) => {
 });
 
 // Actualizar docente
-router.put('/teachers/:id', (req, res) => {
+router.put('/teachers/:id', async (req, res) => {
   try {
     const { nombre, email_institucional, schedule_id, titulo_academico, user_status, custom_hours } = req.body;
-    const teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
+    const teacher = await db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
     if (!teacher) return res.status(404).json({ error: 'Docente no encontrado' });
 
-    db.transaction(() => {
-      db.prepare(`
-        UPDATE teachers 
-        SET nombre = ?, email_institucional = ?, schedule_id = ?, titulo_academico = ?, custom_hours = ?
-        WHERE id = ?
-      `).run(
-        nombre.trim(),
-        email_institucional.trim(),
-        parseInt(schedule_id),
-        titulo_academico || '',
-        custom_hours ? parseFloat(custom_hours) : null,
-        teacher.id
-      );
+    await db.prepare(`
+      UPDATE teachers 
+      SET nombre = ?, email_institucional = ?, schedule_id = ?, titulo_academico = ?, custom_hours = ?
+      WHERE id = ?
+    `).run(
+      nombre.trim(),
+      email_institucional.trim(),
+      parseInt(schedule_id),
+      titulo_academico || '',
+      custom_hours ? parseFloat(custom_hours) : null,
+      teacher.id
+    );
 
-      if (user_status) {
-        db.prepare('UPDATE users SET status = ? WHERE id = ?').run(user_status, teacher.user_id);
-      }
-    })();
+    if (user_status) {
+      await db.prepare('UPDATE users SET status = ? WHERE id = ?').run(user_status, teacher.user_id);
+    }
 
     logAudit(req.user.id, 'ACTUALIZAR_DOCENTE', 'teachers', `Actualizados datos de ${nombre}`, req.ip);
 
-    const updated = db.prepare(`
+    const updated = await db.prepare(`
       SELECT t.*, u.status as user_status, s.name as schedule_name 
       FROM teachers t 
       JOIN users u ON t.user_id = u.id 
@@ -242,12 +252,12 @@ router.put('/teachers/:id', (req, res) => {
 });
 
 // Resetear contraseña
-router.post('/teachers/:id/reset-password', (req, res) => {
+router.post('/teachers/:id/reset-password', async (req, res) => {
   try {
-    const teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
+    const teacher = await db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
     if (!teacher) return res.status(404).json({ error: 'Docente no encontrado' });
 
-    db.prepare("UPDATE users SET password_hash = NULL, status = 'PENDIENTE_ACTIVACION' WHERE id = ?").run(teacher.user_id);
+    await db.prepare("UPDATE users SET password_hash = NULL, status = 'PENDIENTE_ACTIVACION' WHERE id = ?").run(teacher.user_id);
     logAudit(req.user.id, 'RESET_PASSWORD', 'users', `Reseteada contraseña de ${teacher.nombre}`, req.ip);
 
     res.json({ success: true, message: `Contraseña reseteada. ${teacher.nombre} puede ingresar a 'Activar cuenta' para definir nueva clave.` });
@@ -257,9 +267,9 @@ router.post('/teachers/:id/reset-password', (req, res) => {
 });
 
 // Jornadas
-router.get('/schedules', (req, res) => {
+router.get('/schedules', async (req, res) => {
   try {
-    const schedules = db.prepare('SELECT * FROM schedules WHERE is_active = 1').all();
+    const schedules = await db.prepare('SELECT * FROM schedules WHERE is_active = 1').all();
     res.json(schedules);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -267,7 +277,7 @@ router.get('/schedules', (req, res) => {
 });
 
 // Supervisión de asistencias
-router.get('/attendance', (req, res) => {
+router.get('/attendance', async (req, res) => {
   try {
     const { teacher_id, schedule_id, mes, status } = req.query;
     const targetFecha = req.query.fecha || req.query.date;
@@ -312,7 +322,7 @@ router.get('/attendance', (req, res) => {
     }
 
     sql += ' ORDER BY r.date DESC, t.nombre ASC';
-    const records = db.prepare(sql).all(...params);
+    const records = await db.prepare(sql).all(...params);
     res.json(records);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -320,12 +330,12 @@ router.get('/attendance', (req, res) => {
 });
 
 // Activar directamente a un docente por el Coordinador
-router.post('/teachers/:id/activate-direct', (req, res) => {
+router.post('/teachers/:id/activate-direct', async (req, res) => {
   try {
-    const teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
+    const teacher = await db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
     if (!teacher) return res.status(404).json({ error: 'Docente no encontrado' });
 
-    db.prepare("UPDATE users SET status = 'ACTIVO' WHERE id = ?").run(teacher.user_id);
+    await db.prepare("UPDATE users SET status = 'ACTIVO' WHERE id = ?").run(teacher.user_id);
     logAudit(req.user.id, 'ACTIVAR_DOCENTE_DIRECTO', 'users', `Docente ${teacher.nombre} activado directamente por Coordinación`, req.ip);
 
     res.json({ success: true, message: `Docente ${teacher.nombre} activado exitosamente por Coordinación.` });
@@ -335,9 +345,9 @@ router.post('/teachers/:id/activate-direct', (req, res) => {
 });
 
 // Control de Turnos y Activación del Sistema
-router.get('/shift-control', (req, res) => {
+router.get('/shift-control', async (req, res) => {
   try {
-    const settings = db.prepare('SELECT shift_morning_active, shift_afternoon_active, shift_mode, last_activation_morning, last_activation_afternoon, coordinator_activation_msg FROM institutional_settings WHERE id = 1').get();
+    const settings = await db.prepare('SELECT shift_morning_active, shift_afternoon_active, shift_mode, last_activation_morning, last_activation_afternoon, coordinator_activation_msg FROM institutional_settings WHERE id = 1').get();
     res.json(settings || {
       shift_morning_active: 1,
       shift_afternoon_active: 1,
@@ -351,20 +361,20 @@ router.get('/shift-control', (req, res) => {
   }
 });
 
-router.post('/shift-toggle', (req, res) => {
+router.post('/shift-toggle', async (req, res) => {
   try {
     const { shift, active, message } = req.body;
     const now = new Date().toISOString();
     
     if (shift === 'daily' || shift === 'all' || shift === 'morning') {
-      db.prepare(`
+      await db.prepare(`
         UPDATE institutional_settings 
         SET shift_morning_active = ?, shift_afternoon_active = ?, last_activation_morning = ?, coordinator_activation_msg = COALESCE(?, coordinator_activation_msg)
         WHERE id = 1
       `).run(active ? 1 : 0, active ? 1 : 0, now, message || null);
       logAudit(req.user.id, active ? 'ACTIVAR_JORNADA_DIARIA' : 'CERRAR_JORNADA_DIARIA', 'institutional_settings', `Jornada diaria ${active ? 'habilitada' : 'cerrada'} por Coordinación`, req.ip);
     } else if (shift === 'afternoon') {
-      db.prepare(`
+      await db.prepare(`
         UPDATE institutional_settings 
         SET shift_afternoon_active = ?, last_activation_afternoon = ?, coordinator_activation_msg = COALESCE(?, coordinator_activation_msg)
         WHERE id = 1
@@ -374,17 +384,17 @@ router.post('/shift-toggle', (req, res) => {
       return res.status(400).json({ error: 'Turno inválido (debe ser daily, morning o afternoon)' });
     }
 
-    const updated = db.prepare('SELECT shift_morning_active, shift_afternoon_active, shift_mode, last_activation_morning, last_activation_afternoon, coordinator_activation_msg FROM institutional_settings WHERE id = 1').get();
+    const updated = await db.prepare('SELECT shift_morning_active, shift_afternoon_active, shift_mode, last_activation_morning, last_activation_afternoon, coordinator_activation_msg FROM institutional_settings WHERE id = 1').get();
     res.json({ success: true, settings: updated });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/shift-mode', (req, res) => {
+router.post('/shift-mode', async (req, res) => {
   try {
     const { mode } = req.body;
-    db.prepare('UPDATE institutional_settings SET shift_mode = ? WHERE id = 1').run(mode);
+    await db.prepare('UPDATE institutional_settings SET shift_mode = ? WHERE id = 1').run(mode);
     logAudit(req.user.id, 'CAMBIO_MODO_TURNOS', 'institutional_settings', `Modo de turnos cambiado a: ${mode}`, req.ip);
     res.json({ success: true, mode });
   } catch (error) {
@@ -393,13 +403,13 @@ router.post('/shift-mode', (req, res) => {
 });
 
 // Validar y activar asistencia de un docente
-router.put('/attendance/:id/approve', (req, res) => {
+router.put('/attendance/:id/approve', async (req, res) => {
   try {
-    const inst = db.prepare('SELECT coordinator_name FROM institutional_settings WHERE id = 1').get();
+    const inst = await db.prepare('SELECT coordinator_name FROM institutional_settings WHERE id = 1').get();
     const coordName = inst ? inst.coordinator_name : 'Coordinador Académico';
     const now = new Date().toISOString();
 
-    db.prepare(`
+    await db.prepare(`
       UPDATE attendance_records 
       SET is_approved = 1, approved_by = ?, approved_at = ?, is_locked = 1 
       WHERE id = ?
@@ -413,14 +423,14 @@ router.put('/attendance/:id/approve', (req, res) => {
 });
 
 // Validar y activar todas las asistencias de hoy en 1 clic
-router.post('/attendance/approve-all-today', (req, res) => {
+router.post('/attendance/approve-all-today', async (req, res) => {
   try {
     const todayStr = new Date().toISOString().split('T')[0];
-    const inst = db.prepare('SELECT coordinator_name FROM institutional_settings WHERE id = 1').get();
+    const inst = await db.prepare('SELECT coordinator_name FROM institutional_settings WHERE id = 1').get();
     const coordName = inst ? inst.coordinator_name : 'Coordinador Académico';
     const now = new Date().toISOString();
 
-    const info = db.prepare(`
+    const info = await db.prepare(`
       UPDATE attendance_records 
       SET is_approved = 1, approved_by = ?, approved_at = ?, is_locked = 1 
       WHERE date = ? AND is_approved = 0
@@ -434,9 +444,9 @@ router.post('/attendance/approve-all-today', (req, res) => {
 });
 
 // Desbloquear asistencia
-router.put('/attendance/:id/unlock', (req, res) => {
+router.put('/attendance/:id/unlock', async (req, res) => {
   try {
-    db.prepare('UPDATE attendance_records SET is_locked = 0 WHERE id = ?').run(req.params.id);
+    await db.prepare('UPDATE attendance_records SET is_locked = 0 WHERE id = ?').run(req.params.id);
     logAudit(req.user.id, 'DESBLOQUEO_ASISTENCIA', 'attendance_records', `Registro ID ${req.params.id} desbloqueado`, req.ip);
     res.json({ success: true, message: 'Registro desbloqueado para edición docente' });
   } catch (error) {
@@ -445,12 +455,12 @@ router.put('/attendance/:id/unlock', (req, res) => {
 });
 
 // Reporte de docente para el coordinador
-router.get('/reporte-docente', (req, res) => {
+router.get('/reporte-docente', async (req, res) => {
   try {
     const { teacher_id, mes } = req.query;
     if (!teacher_id || !mes) return res.status(400).json({ error: 'teacher_id y mes son requeridos' });
 
-    const teacher = db.prepare(`
+    const teacher = await db.prepare(`
       SELECT t.*, s.name as schedule_name, s.start_time, s.end_time, s.expected_hours
       FROM teachers t
       JOIN schedules s ON t.schedule_id = s.id
@@ -459,12 +469,12 @@ router.get('/reporte-docente', (req, res) => {
 
     if (!teacher) return res.status(404).json({ error: 'Docente no encontrado' });
 
-    const inst = db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
-    const holidays = db.prepare('SELECT * FROM holidays WHERE date LIKE ?').all(`${mes}%`);
+    const inst = await db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
+    const holidays = await db.prepare('SELECT * FROM holidays WHERE date LIKE ?').all(`${mes}%`);
     const holidayMap = {};
     holidays.forEach(h => { holidayMap[h.date] = h.description; });
 
-    const records = db.prepare(`
+    const records = await db.prepare(`
       SELECT r.*, d.docencia_hours, d.vinculacion_hours, d.investigacion_hours, d.gestion_hours, d.activities_detail
       FROM attendance_records r
       JOIN attendance_details d ON r.id = d.record_id
@@ -557,19 +567,19 @@ router.get('/reporte-docente', (req, res) => {
 });
 
 // Configuración institucional
-router.get('/settings', (req, res) => {
+router.get('/settings', async (req, res) => {
   try {
-    const inst = db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
+    const inst = await db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
     res.json(inst);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.put('/settings', (req, res) => {
+router.put('/settings', async (req, res) => {
   try {
     const { institution_name, faculty_name, career_name, coordinator_name, coordinator_title, edit_grace_days } = req.body;
-    db.prepare(`
+    await db.prepare(`
       UPDATE institutional_settings
       SET institution_name = ?, faculty_name = ?, career_name = ?, coordinator_name = ?, coordinator_title = ?, edit_grace_days = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
@@ -577,7 +587,7 @@ router.put('/settings', (req, res) => {
 
     logAudit(req.user.id, 'CONFIGURACION_INSTITUCIONAL', 'institutional_settings', 'Actualizados parámetros institucionales', req.ip);
 
-    const updated = db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
+    const updated = await db.prepare('SELECT * FROM institutional_settings WHERE id = 1').get();
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -585,33 +595,33 @@ router.put('/settings', (req, res) => {
 });
 
 // Feriados
-router.get('/holidays', (req, res) => {
+router.get('/holidays', async (req, res) => {
   try {
-    const holidays = db.prepare('SELECT * FROM holidays ORDER BY date ASC').all();
+    const holidays = await db.prepare('SELECT * FROM holidays ORDER BY date ASC').all();
     res.json(holidays);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/holidays', (req, res) => {
+router.post('/holidays', async (req, res) => {
   try {
     const { date, description, is_national } = req.body;
     if (!date || !description) return res.status(400).json({ error: 'Fecha y descripción son requeridos' });
 
-    db.prepare('INSERT INTO holidays (date, description, is_national) VALUES (?, ?, ?)').run(date, description, is_national ? 1 : 0);
+    await db.prepare('INSERT INTO holidays (date, description, is_national) VALUES (?, ?, ?)').run(date, description, is_national ? 1 : 0);
     logAudit(req.user.id, 'CREAR_FERIADO', 'holidays', `Feriado ${date}: ${description}`, req.ip);
 
-    const holidays = db.prepare('SELECT * FROM holidays ORDER BY date ASC').all();
+    const holidays = await db.prepare('SELECT * FROM holidays ORDER BY date ASC').all();
     res.json(holidays);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.delete('/holidays/:id', (req, res) => {
+router.delete('/holidays/:id', async (req, res) => {
   try {
-    db.prepare('DELETE FROM holidays WHERE id = ?').run(req.params.id);
+    await db.prepare('DELETE FROM holidays WHERE id = ?').run(req.params.id);
     logAudit(req.user.id, 'ELIMINAR_FERIADO', 'holidays', `Feriado ID ${req.params.id} eliminado`, req.ip);
     res.json({ success: true });
   } catch (error) {
@@ -620,9 +630,9 @@ router.delete('/holidays/:id', (req, res) => {
 });
 
 // Auditoría
-router.get('/audit-logs', (req, res) => {
+router.get('/audit-logs', async (req, res) => {
   try {
-    const logs = db.prepare(`
+    const logs = await db.prepare(`
       SELECT a.*, u.cedula as user_cedula, u.role as user_role
       FROM audit_logs a
       LEFT JOIN users u ON a.user_id = u.id

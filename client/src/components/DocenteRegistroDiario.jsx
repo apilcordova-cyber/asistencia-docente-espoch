@@ -31,18 +31,11 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
     coordinator_activation_msg: ''
   });
 
-  // Modalidad de horario: 'combinada' (mañana + tarde) o 'continua' (corrida)
-  const [modalidadHorario, setModalidadHorario] = useState('combinada');
-
-  // Horarios de la jornada
+  // Horarios de la jornada diaria (Franja Matutina y Franja Vespertina)
   const [mEntrada, setMEntrada] = useState('07:00');
   const [mSalida, setMSalida] = useState('13:00');
   const [tEntrada, setTEntrada] = useState('15:00');
   const [tSalida, setTSalida] = useState('17:00');
-
-  // Para jornada continua
-  const [cEntrada, setCEntrada] = useState('07:00');
-  const [cSalida, setCSalida] = useState('15:00');
 
   // Distribución de las 8 Horas en los 4 Pilares
   const [docencia, setDocencia] = useState(4.0);
@@ -68,54 +61,6 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
     (parseFloat(investigacion) || 0) +
     (parseFloat(gestion) || 0)
   ).toFixed(2));
-
-  // Combinaciones sugeridas oficiales para agilizar el llenado
-  const COMBINACIONES_RAPIDAS = [
-    {
-      nombre: '4h Doc + 2h Vinc + 1h Inv + 1h Gest',
-      tag: 'Típica 8h',
-      doc: 4.0, vinc: 2.0, inv: 1.0, gest: 1.0,
-      mod: 'combinada', mIn: '07:00', mOut: '13:00', tIn: '15:00', tOut: '17:00'
-    },
-    {
-      nombre: '5h Doc + 1h Vinc + 1h Inv + 1h Gest',
-      tag: 'Docencia Fuerte',
-      doc: 5.0, vinc: 1.0, inv: 1.0, gest: 1.0,
-      mod: 'combinada', mIn: '07:00', mOut: '13:00', tIn: '15:00', tOut: '17:00'
-    },
-    {
-      nombre: '3h Doc + 3h Inv + 1h Vinc + 1h Gest',
-      tag: 'Investigación',
-      doc: 3.0, vinc: 1.0, inv: 3.0, gest: 1.0,
-      mod: 'combinada', mIn: '08:00', mOut: '13:00', tIn: '15:00', tOut: '18:00'
-    },
-    {
-      nombre: '4h Doc + 2h Vinc + 1h Inv + 1h Gest (07:00 a 15:00)',
-      tag: 'Continua 8h',
-      doc: 4.0, vinc: 2.0, inv: 1.0, gest: 1.0,
-      mod: 'continua', cIn: '07:00', cOut: '15:00'
-    }
-  ];
-
-  const aplicarCombinacion = (c) => {
-    setDocencia(c.doc);
-    setVinculacion(c.vinc);
-    setInvestigacion(c.inv);
-    setGestion(c.gest);
-    if (c.mod === 'combinada') {
-      setModalidadHorario('combinada');
-      if (c.mIn) setMEntrada(c.mIn);
-      if (c.mOut) setMSalida(c.mOut);
-      if (c.tIn) setTEntrada(c.tIn);
-      if (c.tOut) setTSalida(c.tOut);
-    } else {
-      setModalidadHorario('continua');
-      if (c.cIn) setCEntrada(c.cIn);
-      if (c.cOut) setCSalida(c.cOut);
-    }
-    setMensajeExito(`Combinación aplicada: ${c.nombre}`);
-    setTimeout(() => setMensajeExito(''), 3000);
-  };
 
   useEffect(() => {
     cargarRegistroDeFecha();
@@ -152,17 +97,17 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
           setMEntrada(mIn || '07:00');
           setMSalida(mOut || '13:00');
         } else if (r.check_in) {
-          setCEntrada(r.check_in);
+          setMEntrada(r.check_in);
+          setMSalida('13:00');
         }
 
         if (r.check_out && r.check_out.includes('-')) {
           const [tIn, tOut] = r.check_out.split('-').map(s => s.trim());
           setTEntrada(tIn || '15:00');
           setTSalida(tOut || '17:00');
-          setModalidadHorario('combinada');
         } else if (r.check_out && r.check_out !== 'Pendiente Tarde') {
-          setCSalida(r.check_out);
-          setModalidadHorario('continua');
+          setTEntrada('15:00');
+          setTSalida(r.check_out || '17:00');
         }
       } else {
         setRegistroExistente(null);
@@ -173,7 +118,6 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
         setGestion(1.0);
         setDetalleActividades('');
         setObservaciones('');
-        setModalidadHorario('combinada');
         setMEntrada('07:00');
         setMSalida('13:00');
         setTEntrada('15:00');
@@ -209,16 +153,8 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
 
     setCargando(true);
 
-    let checkInStr = '';
-    let checkOutStr = '';
-
-    if (modalidadHorario === 'combinada') {
-      checkInStr = `${mEntrada} - ${mSalida}`;
-      checkOutStr = `${tEntrada} - ${tSalida}`;
-    } else {
-      checkInStr = cEntrada;
-      checkOutStr = cSalida;
-    }
+    const checkInStr = `${mEntrada} - ${mSalida}`;
+    const checkOutStr = `${tEntrada} - ${tSalida}`;
 
     const payload = {
       date: fecha,
@@ -230,10 +166,7 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
       gestion_hours: gestion,
       activities_detail: detalleActividades || 'Cumplimiento de actividades académicas según planificación.',
       notes: JSON.stringify({
-        modalidad: modalidadHorario,
-        horario: modalidadHorario === 'combinada' 
-          ? `Mañana: ${mEntrada}-${mSalida} | Tarde: ${tEntrada}-${tSalida}`
-          : `Continua: ${cEntrada}-${cSalida}`
+        horario: `Mañana: ${mEntrada}-${mSalida} | Tarde: ${tEntrada}-${tSalida}`
       })
     };
 
@@ -349,175 +282,95 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
       <form onSubmit={handleGuardarAsistencia} className="space-y-6">
 
         {/* Tarjeta de Horario y Modalidad */}
+        {/* Tarjeta de Horario de la Jornada Laboral */}
         <div className="bg-white rounded-3xl p-5 sm:p-7 border border-[#D7D6D7]/80 shadow-xs space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#A60809]/10 text-[#A60809] flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-base sm:text-lg font-black text-slate-900">
-                  Horario de la Jornada Laboral
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Selecciona tu modalidad de jornada y registra las horas cumplidas del día.
-                </p>
-              </div>
+          <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
+            <div className="w-10 h-10 rounded-2xl bg-[#A60809]/10 text-[#A60809] flex items-center justify-center flex-shrink-0">
+              <Clock className="w-5 h-5" />
             </div>
-
-            {/* Selector de Modalidad: Combinada vs Continua */}
-            <div className="inline-flex p-1 bg-slate-100 rounded-2xl self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => setModalidadHorario('combinada')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  modalidadHorario === 'combinada'
-                    ? 'bg-white text-[#A60809] shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Jornada Combinada (Mañana y Tarde)
-              </button>
-              <button
-                type="button"
-                onClick={() => setModalidadHorario('continua')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  modalidadHorario === 'continua'
-                    ? 'bg-white text-[#A60809] shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Jornada Continua (8h Corridas)
-              </button>
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-slate-900">
+                Horario de la Jornada Laboral
+              </h2>
+              <p className="text-xs text-slate-500">
+                Registra los horarios de entrada y salida de tu jornada diaria (Franja Matutina y Franja Vespertina).
+              </p>
             </div>
           </div>
 
-          {/* Inputs de Horario según la modalidad */}
-          {modalidadHorario === 'combinada' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              {/* Franja 1: Mañana */}
-              <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Sun className="w-4 h-4 text-amber-600" />
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                      Franja Matutina (07h00 - 13h00)
-                    </span>
-                  </div>
-                  <span className="text-xs font-bold text-amber-800">
-                    {calcularHorasRango(mEntrada, mSalida)} hrs
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Entrada Mañana</label>
-                    <input
-                      type="time"
-                      value={mEntrada}
-                      onChange={(e) => setMEntrada(e.target.value)}
-                      className="w-full px-3 py-2 text-xs sm:text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A60809]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Salida Mañana</label>
-                    <input
-                      type="time"
-                      value={mSalida}
-                      onChange={(e) => setMSalida(e.target.value)}
-                      className="w-full px-3 py-2 text-xs sm:text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A60809]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Franja 2: Tarde */}
-              <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Moon className="w-4 h-4 text-indigo-600" />
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                      Franja Vespertina (15h00 - 21h00)
-                    </span>
-                  </div>
-                  <span className="text-xs font-bold text-indigo-800">
-                    {calcularHorasRango(tEntrada, tSalida)} hrs
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Entrada Tarde</label>
-                    <input
-                      type="time"
-                      value={tEntrada}
-                      onChange={(e) => setTEntrada(e.target.value)}
-                      className="w-full px-3 py-2 text-xs sm:text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A60809]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Salida Tarde</label>
-                    <input
-                      type="time"
-                      value={tSalida}
-                      onChange={(e) => setTSalida(e.target.value)}
-                      className="w-full px-3 py-2 text-xs sm:text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A60809]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          ) : (
-            /* Jornada Continua */
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+          {/* Inputs de Horario: Franja Matutina y Franja Vespertina */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Franja 1: Mañana */}
+            <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                  Horario de Jornada Continua
-                </span>
-                <span className="text-xs font-bold text-[#A60809]">
-                  {calcularHorasRango(cEntrada, cSalida)} hrs programadas
+                <div className="flex items-center space-x-2">
+                  <Sun className="w-4 h-4 text-amber-600" />
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Franja Matutina (07h00 - 13h00)
+                  </span>
+                </div>
+                <span className="text-xs font-bold text-amber-800">
+                  {calcularHorasRango(mEntrada, mSalida)} hrs
                 </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Hora de Entrada</label>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Entrada Mañana</label>
                   <input
                     type="time"
-                    value={cEntrada}
-                    onChange={(e) => setCEntrada(e.target.value)}
+                    value={mEntrada}
+                    onChange={(e) => setMEntrada(e.target.value)}
                     className="w-full px-3 py-2 text-xs sm:text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A60809]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Hora de Salida</label>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Salida Mañana</label>
                   <input
                     type="time"
-                    value={cSalida}
-                    onChange={(e) => setCSalida(e.target.value)}
+                    value={mSalida}
+                    onChange={(e) => setMSalida(e.target.value)}
                     className="w-full px-3 py-2 text-xs sm:text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A60809]"
                   />
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Accesos rápidos de combinaciones de 8 horas */}
-          <div>
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 block mb-2">
-              Combinaciones Rápidas Recomendadas (8.0 Horas):
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {COMBINACIONES_RAPIDAS.map((c, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => aplicarCombinacion(c)}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition-all cursor-pointer"
-                >
-                  <span className="font-bold text-[#A60809]">{c.tag}</span>: {c.nombre}
-                </button>
-              ))}
+            {/* Franja 2: Tarde */}
+            <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Moon className="w-4 h-4 text-indigo-600" />
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Franja Vespertina (15h00 - 21h00)
+                  </span>
+                </div>
+                <span className="text-xs font-bold text-indigo-800">
+                  {calcularHorasRango(tEntrada, tSalida)} hrs
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Entrada Tarde</label>
+                  <input
+                    type="time"
+                    value={tEntrada}
+                    onChange={(e) => setTEntrada(e.target.value)}
+                    className="w-full px-3 py-2 text-xs sm:text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A60809]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Salida Tarde</label>
+                  <input
+                    type="time"
+                    value={tSalida}
+                    onChange={(e) => setTSalida(e.target.value)}
+                    className="w-full px-3 py-2 text-xs sm:text-sm font-bold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A60809]"
+                  />
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
 

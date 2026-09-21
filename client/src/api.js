@@ -285,7 +285,13 @@ export async function getAdminSchedules() {
 }
 
 export async function getAdminAttendance(params = {}) {
-  const q = new URLSearchParams(params).toString();
+  const cleanParams = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== '' && v !== 'undefined') {
+      cleanParams[k] = v;
+    }
+  }
+  const q = new URLSearchParams(cleanParams).toString();
   const list = await fetchWithAuth(`/admin/attendance?${q}`);
   return list.map(t => ({
     ...t,
@@ -294,7 +300,9 @@ export async function getAdminAttendance(params = {}) {
     apellidos: t.apellidos || '',
     cedula: t.cedula || t.teacher_cedula || '',
     check_in_time: t.check_in_time || t.check_in || '--:--',
-    check_out_time: t.check_out_time || t.check_out || '--:--'
+    check_out_time: t.check_out_time || t.check_out || '--:--',
+    created_at: t.created_at,
+    updated_at: t.updated_at
   }));
 }
 

@@ -11,15 +11,34 @@ export default function CoordinadorSupervision() {
   const [error, setError] = useState(null);
   const [unlockingId, setUnlockingId] = useState(null);
 
+  const formatHoraRegistro = (timestamp) => {
+    if (!timestamp) return '--:--';
+    try {
+      let iso = timestamp;
+      if (typeof timestamp === 'string') {
+        if (!timestamp.includes('T')) {
+          iso = timestamp.replace(' ', 'T') + 'Z';
+        } else if (!timestamp.endsWith('Z')) {
+          iso = timestamp + 'Z';
+        }
+      }
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return timestamp;
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return timestamp;
+    }
+  };
+
   const cargarFiltrosYRegistros = async () => {
     try {
       setLoading(true);
       setError(null);
-      const recRes = await adminAPI.getAttendanceRecords({ 
-        fecha, 
-        date: fecha, 
-        status: filtroCumplimiento || undefined 
-      });
+      const params = { fecha, date: fecha };
+      if (filtroCumplimiento) {
+        params.status = filtroCumplimiento;
+      }
+      const recRes = await adminAPI.getAttendanceRecords(params);
       setRecords(recRes || []);
     } catch (err) {
       setError(err.message || 'Error al consultar registros de asistencia');
@@ -200,9 +219,20 @@ export default function CoordinadorSupervision() {
                           <span className="font-bold text-gray-900 block">
                             {r.nombre || r.teacher_nombre || r.nombres || 'Docente'}
                           </span>
-                          <span className="text-[11px] font-mono text-gray-500">
-                            CI: {r.cedula || r.teacher_cedula || '--'}
-                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            <span className="text-[11px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                              CI: {r.cedula || r.teacher_cedula || '--'}
+                            </span>
+                            {(r.created_at || r.updated_at) && (
+                              <span 
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#810404] bg-[#A60809]/10 px-2 py-0.5 rounded border border-[#A60809]/20"
+                                title={`Registrado en sistema: ${r.created_at || r.updated_at}`}
+                              >
+                                <Clock className="w-3 h-3 text-[#A60809]" />
+                                <span>Registrado a las: {formatHoraRegistro(r.created_at || r.updated_at)}</span>
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         <td className="py-3 px-3 text-xs font-mono text-gray-700 whitespace-nowrap">

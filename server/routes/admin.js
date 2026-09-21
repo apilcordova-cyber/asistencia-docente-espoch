@@ -306,7 +306,7 @@ router.get('/attendance', (req, res) => {
       sql += ' AND r.date LIKE ?';
       params.push(`${mes}%`);
     }
-    if (status) {
+    if (status && status !== 'undefined' && status !== 'null' && status !== 'TODOS' && status !== '') {
       sql += ' AND r.status = ?';
       params.push(status);
     }

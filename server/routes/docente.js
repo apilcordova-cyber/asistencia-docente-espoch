@@ -177,11 +177,11 @@ router.post('/asistencia', (req, res) => {
       return res.status(403).json({ error: 'Este registro se encuentra bloqueado. Contacte a Coordinación si requiere corregirlo.' });
     }
 
-    // Validación de control de activación por el Coordinador
-    if (inst && inst.shift_mode === 'COORDINADOR') {
-      if (inst.shift_morning_active === 0 && inst.shift_afternoon_active === 0 && (!existing || existing.is_locked === 1)) {
+    // El sistema se encuentra abierto permanentemente (24/7). Solo se bloquea si el Coordinador lo cerró explícitamente.
+    if (inst && inst.shift_mode === 'CERRADO') {
+      if (!existing || existing.is_locked === 1) {
         return res.status(403).json({ 
-          error: 'El sistema de registro se encuentra temporalmente cerrado. Requiere activación previa de jornada por parte del Coordinador de Carrera.' 
+          error: 'El sistema de registro se encuentra temporalmente en pausa por Coordinación de Carrera.' 
         });
       }
     }

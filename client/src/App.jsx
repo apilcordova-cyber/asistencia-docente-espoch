@@ -130,6 +130,9 @@ export default function App() {
             <span className="font-bold text-[#810404] tracking-wider">
               MKTAP
             </span>
+            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-300">
+              asistencia-docente-actualizada1
+            </span>
           </div>
         </div>
       </footer>

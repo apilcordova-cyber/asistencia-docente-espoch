@@ -24,6 +24,9 @@ export default function CoordinadorNavbar({ user, currentTab, onSelectTab, onLog
             <span className="hidden xl:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#A60809]/10 text-[#810404] border border-[#A60809]/20 uppercase tracking-wide">
               Panel Coordinación
             </span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+              asistencia-docente-actualizada1
+            </span>
           </div>
 
           {/* Navegación Desktop */}

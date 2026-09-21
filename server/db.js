@@ -124,12 +124,15 @@ addCol('attendance_records', 'approved_by TEXT');
 addCol('attendance_records', 'approved_at TIMESTAMP');
 addCol('teachers', 'telefono TEXT');
 
-// Actualizar siempre el Coordinador Oficial de la Carrera de Marketing
+// Actualizar siempre el Coordinador Oficial de la Carrera de Marketing y mantener sistema abierto 24/7
 try {
   db.prepare(`
     UPDATE institutional_settings 
     SET coordinator_name = 'Ing. Marco Vinicio Salazar Tenelanda',
-        coordinator_title = 'Coordinador de la Carrera de Marketing'
+        coordinator_title = 'Coordinador de la Carrera de Marketing',
+        shift_morning_active = 1,
+        shift_afternoon_active = 1,
+        shift_mode = 'LIBRE'
     WHERE id = 1
   `).run();
 } catch (e) {}

@@ -249,7 +249,7 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
     setFecha(d.toISOString().split('T')[0]);
   };
 
-  const isJornadaHabilitada = shiftControl.shift_morning_active === 1 || shiftControl.shift_afternoon_active === 1;
+  const isJornadaHabilitada = shiftControl.shift_mode !== 'CERRADO' && (shiftControl.shift_morning_active !== 0 || shiftControl.shift_afternoon_active !== 0);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-16">
@@ -308,7 +308,7 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
             }`}>
               <span className={`w-2 h-2 rounded-full ${isJornadaHabilitada ? 'bg-emerald-600 animate-pulse' : 'bg-rose-600'}`} />
               <span>
-                {isJornadaHabilitada ? 'Jornada Habilitada por Coordinación' : 'Jornada en Espera de Habilitación'}
+                {isJornadaHabilitada ? 'Sistema Habilitado (8.0 Horas Reglamentarias)' : 'Registro en Pausa por Coordinación'}
               </span>
             </div>
 

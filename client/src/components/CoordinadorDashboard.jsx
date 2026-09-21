@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, CheckCircle2, AlertTriangle, ShieldCheck, Clock, Lock, RefreshCw } from 'lucide-react';
+import { Sun, CheckCircle2, AlertTriangle, Clock, RefreshCw, Award, Users, BookOpen } from 'lucide-react';
 import { adminAPI } from '../api';
 
 export default function CoordinadorDashboard({ onNavigateTab }) {
@@ -7,11 +7,11 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Control de Activación de Turnos (Mañana y Tarde)
+  // Control de Activación Permanente del Sistema
   const [shiftControl, setShiftControl] = useState({
     shift_morning_active: 1,
     shift_afternoon_active: 1,
-    shift_mode: 'COORDINADOR',
+    shift_mode: 'LIBRE',
     last_activation_morning: null,
     last_activation_afternoon: null
   });
@@ -43,8 +43,8 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
       const res = await adminAPI.toggleShift(shift, active);
       if (res && res.settings) {
         setShiftControl(res.settings);
-        const shiftNombre = shift === 'morning' ? 'Turno Matutino' : 'Turno Vespertino';
-        setShiftMsg(`¡${shiftNombre} ${active ? 'activado' : 'cerrado'} exitosamente por Coordinación!`);
+        const estadoTxt = active ? 'habilitado permanentemente' : 'pausado temporalmente';
+        setShiftMsg(`¡Sistema de registro ${estadoTxt} por Coordinación!`);
         setTimeout(() => setShiftMsg(''), 4500);
       }
     } catch (err) {
@@ -91,7 +91,12 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
     );
   }
 
-  const { kpis, desglosePilares, distribucionJornadas, docentesSinRegistroHoy } = data;
+  const { kpis, desglosePilares, docentesSinRegistroHoy } = data;
+  const isSystemActive = shiftControl.shift_mode !== 'CERRADO' && (shiftControl.shift_morning_active !== 0 || shiftControl.shift_afternoon_active !== 0);
+
+  const completados = kpis.completadosHoy || 0;
+  const incompletos = kpis.incompletosHoy || 0;
+  const pendientes = kpis.sinRegistroHoy || (kpis.docentesActivos - kpis.asistenciasHoy);
 
   return (
     <div className="space-y-6">
@@ -122,21 +127,21 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
         </div>
       </div>
 
-      {/* PANEL DE CONTROL MAESTRO: HABILITACIÓN DIARIA POR EL COORDINADOR */}
+      {/* PANEL DE CONTROL: ESTADO DEL SISTEMA Y VALIDACIÓN */}
       <div className="bg-white rounded-2xl border-2 border-[#A60809]/30 shadow-sm p-6 relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#A60809] text-white">
-                Control de Coordinación
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-700 text-white">
+                Sistema Abierto 24/7
               </span>
-              <span className="text-xs text-gray-500 font-medium">Habilitación Única Matutina</span>
+              <span className="text-xs text-gray-500 font-medium">Sin necesidad de habilitación diaria manual</span>
             </div>
             <h2 className="text-xl font-black text-gray-900 mt-1">
-              Habilitación Diaria de Jornada Docente (8.0 Horas)
+              Registro Continuo de Jornada Docente (8.0 Horas)
             </h2>
             <p className="text-xs text-gray-600 mt-0.5">
-              Con una sola habilitación por la mañana, permites que los docentes registren directamente su jornada completa de todo el día sin etapas separadas.
+              El sistema se mantiene activo permanentemente. Los docentes pueden ingresar y registrar sus 8 horas reglamentarias con total libertad.
             </p>
           </div>
 
@@ -160,66 +165,59 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
           </div>
         )}
 
-        {/* TARJETA UNIFICADA DE HABILITACIÓN DIARIA */}
-        {(() => {
-          const isDayActive = shiftControl.shift_morning_active === 1 || shiftControl.shift_afternoon_active === 1;
-          return (
-            <div className={`p-5 rounded-2xl border-2 transition-all mt-4 ${
-              isDayActive
-                ? 'bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-white border-emerald-300 shadow-xs'
-                : 'bg-gray-50 border-gray-200'
-            }`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                    isDayActive ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' : 'bg-gray-300 text-gray-600'
+        {/* TARJETA DE ESTADO AUTOMÁTICO */}
+        <div className={`p-5 rounded-2xl border-2 transition-all mt-4 ${
+          isSystemActive
+            ? 'bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-white border-emerald-300 shadow-xs'
+            : 'bg-rose-50/60 border-rose-200'
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                isSystemActive ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' : 'bg-rose-600 text-white'
+              }`}>
+                <Sun className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase ${
+                    isSystemActive
+                      ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                      : 'bg-rose-100 text-rose-800 border border-rose-200'
                   }`}>
-                    <Sun className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase ${
-                        isDayActive
-                          ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                          : 'bg-rose-100 text-rose-800 border border-rose-200'
-                      }`}>
-                        {isDayActive ? '● JORNADA HABILITADA PARA TODO EL DÍA' : '○ JORNADA CERRADA / INACTIVA'}
-                      </span>
-                    </div>
-                    <h3 className="text-base font-black text-gray-900 mt-1">
-                      Registro de Jornada Laboral Docente (07h00 a 21h00)
-                    </h3>
-                    <p className="text-xs text-gray-600 mt-0.5">
-                      Los docentes pueden ingresar en cualquier momento de la jornada y registrar sus 8 horas reglamentarias con la combinación de funciones que les corresponda.
-                    </p>
-                  </div>
+                    {isSystemActive ? '● REGISTRO HABILITADO AUTOMÁTICAMENTE (TODO EL DÍA)' : '○ REGISTRO EN PAUSA'}
+                  </span>
                 </div>
-
-                <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleToggleShift('daily', !isDayActive)}
-                    disabled={togglingShift === 'daily'}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm cursor-pointer ${
-                      isDayActive
-                        ? 'bg-rose-700 hover:bg-rose-800 text-white'
-                        : 'bg-emerald-700 hover:bg-emerald-800 text-white'
-                    }`}
-                  >
-                    {togglingShift === 'daily' 
-                      ? 'Procesando...' 
-                      : (isDayActive ? 'Cerrar Jornada Diaria' : '✓ Habilitar Jornada para Todo el Día')}
-                  </button>
-                  {shiftControl.last_activation_morning && (
-                    <span className="text-[11px] text-gray-500 font-medium">
-                      Habilitado a las: {new Date(shiftControl.last_activation_morning).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  )}
-                </div>
+                <h3 className="text-base font-black text-gray-900 mt-1">
+                  Acceso Total para la Planta Docente
+                </h3>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Los docentes pueden ingresar en cualquier momento y reportar su distribución de funciones sustantivas hasta completar 8.0 horas.
+                </p>
               </div>
             </div>
-          );
-        })()}
+
+            <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => handleToggleShift('daily', !isSystemActive)}
+                disabled={togglingShift === 'daily'}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer ${
+                  isSystemActive
+                    ? 'bg-gray-100 hover:bg-rose-50 text-gray-700 hover:text-rose-700 border border-gray-200'
+                    : 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                }`}
+              >
+                {togglingShift === 'daily' 
+                  ? 'Procesando...' 
+                  : (isSystemActive ? 'Pausar Registro Temporalmente' : '✓ Reanudar Registro')}
+              </button>
+              <span className="text-[11px] text-emerald-800 font-bold">
+                Operación continua sin bloqueos
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 4 KPIs Clave */}
@@ -233,7 +231,7 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
             <span className="text-xs text-gray-500">profesores activos</span>
           </div>
           <div className="mt-3 text-xs text-gray-500 flex items-center justify-between border-t pt-2 border-gray-100">
-            <span>En jornada combinable</span>
+            <span>Jornada diaria</span>
             <span className="font-semibold text-gray-700">8.0h reglamentarias</span>
           </div>
         </div>
@@ -241,62 +239,67 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
         {/* KPI 2: Asistencia Hoy */}
         <div className="bg-white rounded-xl p-5 border border-[#D7D6D7]/60 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 w-2 h-full bg-emerald-600" />
-          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Asistencia Registrada Hoy</span>
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Asistencias Registradas Hoy</span>
           <div className="flex items-baseline gap-2 mt-2">
             <span className="text-3xl font-black text-gray-900">{kpis.asistenciasHoy}</span>
             <span className="text-xs text-gray-500">de {kpis.totalDocentes} docentes</span>
           </div>
           <div className="mt-3 text-xs flex items-center justify-between border-t pt-2 border-gray-100">
             <span className="text-gray-500">Sin registro hoy:</span>
-            <span className={`font-bold ${docentesSinRegistroHoy.length > 0 ? 'text-[#A60809]' : 'text-emerald-700'}`}>
-              {docentesSinRegistroHoy.length} docentes
+            <span className={`font-bold ${pendientes > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+              {pendientes} pendientes
             </span>
           </div>
         </div>
 
-        {/* KPI 3: Horas Totales Mes */}
+        {/* KPI 3: Horas Mes */}
         <div className="bg-white rounded-xl p-5 border border-[#D7D6D7]/60 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 w-2 h-full bg-[#810404]" />
-          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Horas Reportadas Mes</span>
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Horas Mes</span>
           <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-3xl font-black text-gray-900">
-              {kpis.horasMes.toFixed(1)}<span className="text-lg font-normal text-gray-600">h</span>
-            </span>
+            <span className="text-3xl font-black text-gray-900">{kpis.horasMes.toFixed(1)}</span>
+            <span className="text-xs text-gray-500">horas acumuladas</span>
           </div>
           <div className="mt-3 text-xs text-gray-500 flex items-center justify-between border-t pt-2 border-gray-100">
-            <span>Total acumulado carrera</span>
-            <span className="font-semibold text-gray-700">Mes actual</span>
+            <span>Promedio por docente:</span>
+            <span className="font-semibold text-gray-700">
+              {kpis.totalDocentes > 0 ? (kpis.horasMes / kpis.totalDocentes).toFixed(1) : 0}h
+            </span>
           </div>
         </div>
 
-        {/* KPI 4: Tasa de Cumplimiento Promedio */}
+        {/* KPI 4: Cumplimiento */}
         <div className="bg-white rounded-xl p-5 border border-[#D7D6D7]/60 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 w-2 h-full bg-[#C91C1E]" />
           <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Cumplimiento Global</span>
           <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-3xl font-black text-[#A60809]">
-              {kpis.tasaCumplimiento.toFixed(1)}%
-            </span>
+            <span className="text-3xl font-black text-gray-900">{kpis.tasaCumplimiento}%</span>
+            <span className="text-xs text-gray-500">del objetivo</span>
           </div>
           <div className="mt-3 text-xs text-gray-500 flex items-center justify-between border-t pt-2 border-gray-100">
-            <span>Base reglamentaria:</span>
-            <span className="font-semibold text-gray-700">8.0h / día</span>
+            <span>Fórmula:</span>
+            <span className="font-semibold text-gray-700">8.0h x 20 días</span>
           </div>
         </div>
       </div>
 
-      {/* Distribución por Funciones Sustantivas y Jornadas */}
+      {/* Distribución por Funciones Sustantivas y Cumplimiento de Horas */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Desglose de Horas del Mes */}
+        
+        {/* Pilares Académicos */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-[#D7D6D7]/60 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-base font-bold text-gray-900">Distribución de Horas por Función Sustantiva</h2>
-              <p className="text-xs text-gray-500">Consolidado general de horas docentes en el período activo</p>
+              <h2 className="text-base font-bold text-gray-900">Distribución por Funciones Sustantivas</h2>
+              <p className="text-xs text-gray-500">Horas acumuladas reportadas en el mes actual</p>
             </div>
+            <span className="text-xs font-bold text-[#A60809] bg-[#A60809]/10 px-2.5 py-1 rounded-full">
+              4 Pilares ESPOCH
+            </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          {/* Tarjetas de Pilares */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#A60809]" />
@@ -376,36 +379,75 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
           </div>
         </div>
 
-        {/* Jornadas Oficiales Marketing */}
+        {/* ESTADO DE CUMPLIMIENTO DE HORAS (8.0H) HOY (Reemplaza a Jornadas) */}
         <div className="bg-white rounded-xl border border-[#D7D6D7]/60 shadow-sm p-6 flex flex-col justify-between">
           <div>
-            <h2 className="text-base font-bold text-gray-900">Jornadas Institucionales</h2>
-            <p className="text-xs text-gray-500 mb-4">Estructura horaria de Marketing ESPOCH</p>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-base font-bold text-gray-900">Cumplimiento de Horas Hoy</h2>
+              <span className="text-xs font-bold text-[#A60809] bg-[#A60809]/10 px-2.5 py-0.5 rounded-full">
+                Meta: 8.0 hrs
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">Verificación del cumplimiento de la jornada laboral diaria</p>
 
             <div className="space-y-3">
-              {distribucionJornadas.map((j) => (
-                <div key={j.id} className="p-3 rounded-lg border border-[#D7D6D7]/60 bg-gray-50/50">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-900">{j.name}</span>
-                    <span className="text-xs font-bold text-[#A60809] px-2 py-0.5 bg-[#A60809]/10 rounded">
-                      {j.count} docentes
-                    </span>
+              {/* Con 8.0h completadas */}
+              <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/60 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                    <CheckCircle2 className="w-4 h-4" />
                   </div>
-                  <div className="text-[11px] text-gray-500 mt-1 flex items-center justify-between">
-                    <span>Horario: {j.start_time} - {j.end_time}</span>
-                    <span>{j.hours_per_day} horas base</span>
+                  <div>
+                    <span className="text-xs font-bold text-emerald-950 block">Jornadas Completas (8.0h)</span>
+                    <span className="text-[11px] text-emerald-700 font-medium">Cumplimiento reglamentario</span>
                   </div>
                 </div>
-              ))}
+                <span className="text-lg font-black text-emerald-900 font-mono">
+                  {completados}
+                </span>
+              </div>
+
+              {/* Con horas incompletas */}
+              <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-amber-950 block">Horas Incompletas (&lt; 8.0h)</span>
+                    <span className="text-[11px] text-amber-700 font-medium">Reportaron menos de 8 horas</span>
+                  </div>
+                </div>
+                <span className="text-lg font-black text-amber-900 font-mono">
+                  {incompletos}
+                </span>
+              </div>
+
+              {/* Pendientes de registrar hoy */}
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center font-bold">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 block">Pendientes de Registrar</span>
+                    <span className="text-[11px] text-slate-500 font-medium">Docentes activos sin registro</span>
+                  </div>
+                </div>
+                <span className="text-lg font-black text-slate-900 font-mono">
+                  {pendientes}
+                </span>
+              </div>
             </div>
           </div>
 
           <div className="mt-4 pt-4 border-t border-gray-100 text-center">
             <button
-              onClick={() => onNavigateTab && onNavigateTab('docentes')}
-              className="text-xs font-bold text-[#A60809] hover:underline"
+              onClick={() => onNavigateTab && onNavigateTab('supervision')}
+              className="text-xs font-bold text-[#A60809] hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
             >
-              Administrar Asignaciones de Jornada &rarr;
+              <span>Ver Detalle en Supervisión Diaria</span>
+              <span>&rarr;</span>
             </button>
           </div>
         </div>
@@ -434,17 +476,17 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
             {docentesSinRegistroHoy.map((doc) => (
               <div key={doc.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-gray-50 transition-colors">
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">{doc.nombres} {doc.apellidos}</h3>
+                  <h3 className="text-sm font-bold text-gray-900">{doc.nombres || doc.nombre} {doc.apellidos || ''}</h3>
                   <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-0.5">
                     <span className="font-mono">CI: {doc.cedula}</span>
                     <span>•</span>
-                    <span>{doc.email}</span>
+                    <span>{doc.email || doc.email_institucional}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 font-semibold rounded-md border border-gray-200">
-                    {doc.schedule_name || 'Sin Jornada'} ({doc.start_time || '07:00'} - {doc.end_time || '13:00'})
+                  <span className="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 font-semibold rounded-md border border-gray-200 font-mono">
+                    Horario: {doc.start_time || '07:00'} a {doc.end_time || '15:00'} (8.0h)
                   </span>
                   <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 font-bold rounded">
                     Pendiente

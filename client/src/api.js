@@ -289,8 +289,12 @@ export async function getAdminAttendance(params = {}) {
   const list = await fetchWithAuth(`/admin/attendance?${q}`);
   return list.map(t => ({
     ...t,
-    nombres: t.nombres || t.nombre,
-    apellidos: t.apellidos || ''
+    nombres: t.nombres || t.nombre || t.teacher_nombre || 'Docente',
+    nombre: t.nombre || t.teacher_nombre || t.nombres || 'Docente',
+    apellidos: t.apellidos || '',
+    cedula: t.cedula || t.teacher_cedula || '',
+    check_in_time: t.check_in_time || t.check_in || '--:--',
+    check_out_time: t.check_out_time || t.check_out || '--:--'
   }));
 }
 

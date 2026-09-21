@@ -17,6 +17,8 @@ router.get('/dashboard', (req, res) => {
     const pendingActivation = db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'DOCENTE' AND status = 'PENDIENTE_ACTIVACION'").get().c;
 
     const markedToday = db.prepare('SELECT COUNT(*) as c FROM attendance_records WHERE date = ?').get(todayStr).c;
+    const completedToday = db.prepare('SELECT COUNT(*) as c FROM attendance_records WHERE date = ? AND total_hours >= 8.0').get(todayStr).c;
+    const incompleteToday = db.prepare('SELECT COUNT(*) as c FROM attendance_records WHERE date = ? AND total_hours < 8.0').get(todayStr).c;
     const pendingToday = Math.max(0, activeTeachers - markedToday);
 
     const monthlyStats = db.prepare(`
@@ -65,6 +67,10 @@ router.get('/dashboard', (req, res) => {
         pendingActivation,
         markedToday,
         asistenciasHoy: markedToday,
+        completedToday,
+        completadosHoy: completedToday,
+        incompleteToday,
+        incompletosHoy: incompleteToday,
         pendingToday,
         sinRegistroHoy: pendingToday,
         jornada1Total: j1Count,
@@ -263,15 +269,24 @@ router.get('/schedules', (req, res) => {
 // Supervisión de asistencias
 router.get('/attendance', (req, res) => {
   try {
-    const { teacher_id, schedule_id, mes, fecha, status } = req.query;
+    const { teacher_id, schedule_id, mes, status } = req.query;
+    const targetFecha = req.query.fecha || req.query.date;
     let sql = `
-      SELECT r.*, t.nombre as teacher_nombre, t.cedula as teacher_cedula,
-             s.name as schedule_name, s.expected_hours,
-             d.docencia_hours, d.vinculacion_hours, d.investigacion_hours, d.gestion_hours, d.activities_detail
+      SELECT r.*, 
+             t.nombre as teacher_nombre, t.nombre as nombre, t.nombre as nombres,
+             t.cedula as teacher_cedula, t.cedula as cedula,
+             COALESCE(s.name, 'Jornada Institucional') as schedule_name, 
+             COALESCE(s.expected_hours, 8.0) as expected_hours,
+             r.check_in as check_in_time, r.check_out as check_out_time,
+             COALESCE(d.docencia_hours, 0) as docencia_hours, 
+             COALESCE(d.vinculacion_hours, 0) as vinculacion_hours, 
+             COALESCE(d.investigacion_hours, 0) as investigacion_hours, 
+             COALESCE(d.gestion_hours, 0) as gestion_hours, 
+             COALESCE(d.activities_detail, r.notes) as activities_detail
       FROM attendance_records r
       JOIN teachers t ON r.teacher_id = t.id
-      JOIN schedules s ON t.schedule_id = s.id
-      JOIN attendance_details d ON r.id = d.record_id
+      LEFT JOIN schedules s ON t.schedule_id = s.id
+      LEFT JOIN attendance_details d ON r.id = d.record_id
       WHERE 1=1
     `;
     const params = [];
@@ -284,9 +299,9 @@ router.get('/attendance', (req, res) => {
       sql += ' AND t.schedule_id = ?';
       params.push(schedule_id);
     }
-    if (fecha) {
+    if (targetFecha) {
       sql += ' AND r.date = ?';
-      params.push(fecha);
+      params.push(targetFecha);
     } else if (mes) {
       sql += ' AND r.date LIKE ?';
       params.push(`${mes}%`);

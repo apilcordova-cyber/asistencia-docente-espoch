@@ -173,7 +173,7 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
       vinculacion_hours: vinculacion,
       investigacion_hours: investigacion,
       gestion_hours: gestion,
-      activities_detail: detalleActividades || 'Cumplimiento de actividades académicas según planificación.',
+      activities_detail: detalleActividades || `Docencia: ${docencia}h | Vinculación: ${vinculacion}h | Investigación: ${investigacion}h | Gestión: ${gestion}h (Cumplimiento de Jornada 8.0h)`,
       notes: JSON.stringify({
         horario: `Mañana: ${mEntrada}-${mSalida} | Tarde: ${tEntrada}-${tSalida}`
       })
@@ -446,25 +446,6 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
           jornadaObjetivo={8.0}
         />
 
-        {/* 5. DETALLE DE ACTIVIDADES CUMPLIDAS */}
-        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-[#D7D6D7]/80 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-              Detalle de Actividades Realizadas en el Día *
-            </label>
-            <span className="text-[11px] text-slate-400">
-              Aparecerá en tu Hoja Oficial de Asistencia
-            </span>
-          </div>
-          <textarea
-            required
-            rows={3}
-            value={detalleActividades}
-            onChange={(e) => setDetalleActividades(e.target.value)}
-            placeholder="Ej. Docencia: Cátedra de Fundamentos de Marketing y dinámicas de grupo. Vinculación: Reunión de seguimiento con empresa comunitaria. Investigación: Revisión de fuentes bibliográficas para paper. Gestión: Planificación semanal de aula."
-            className="w-full p-3.5 text-xs sm:text-sm bg-[#F9F9FB] border border-[#D7D6D7] rounded-2xl text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#A60809] transition-all"
-          />
-        </div>
 
         {/* 6. BOTÓN DE GUARDADO PRINCIPAL */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">

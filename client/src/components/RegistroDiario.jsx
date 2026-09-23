@@ -359,49 +359,6 @@ export default function RegistroDiario({ profesorActivo, onRegistroGuardado }) {
           />
         </div>
 
-        {/* Bitácora de Actividades */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center">
-                <FileEdit className="w-5 h-5 mr-2 text-indigo-600" />
-                Detalle y Bitácora de Actividades Realizadas
-              </h3>
-              <p className="text-xs text-slate-500">
-                Breve descripción de lo trabajado hoy. Este texto se incluirá en la hoja oficial de asistencia.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={insertarPlantillaDetalle}
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-all"
-            >
-              + Insertar Plantilla
-            </button>
-          </div>
-
-          <textarea
-            rows="4"
-            value={detalleActividades}
-            onChange={(e) => setDetalleActividades(e.target.value)}
-            placeholder="Ejemplo: Docencia: Cátedra de Programación en aula 302 y tutorías. Investigación: Redacción de introducción de paper. Gestión: Comisión de evaluación curricular..."
-            className="w-full border border-slate-300 rounded-xl p-3.5 text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
-              Observaciones o Novedades Opcionales:
-            </label>
-            <input
-              type="text"
-              value={observaciones}
-              onChange={(e) => setObservaciones(e.target.value)}
-              placeholder="Ninguna novedad reportada"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-            />
-          </div>
-        </div>
-
         {/* Botón de Guardado Principal */}
         <div className="flex items-center justify-end space-x-3">
           <button

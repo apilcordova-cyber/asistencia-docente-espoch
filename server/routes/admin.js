@@ -7,10 +7,19 @@ const router = express.Router();
 router.use(authenticate);
 router.use(requireCoordinator);
 
+function getEcuadorToday() {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
+  } catch (e) {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+}
+
 // Dashboard general
 router.get('/dashboard', async (req, res) => {
   try {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getEcuadorToday();
     const currentMonth = todayStr.substring(0, 7);
 
     const totalTeachersRow = await db.prepare('SELECT COUNT(*) as c FROM teachers').get();
@@ -425,7 +434,7 @@ router.put('/attendance/:id/approve', async (req, res) => {
 // Validar y activar todas las asistencias de hoy en 1 clic
 router.post('/attendance/approve-all-today', async (req, res) => {
   try {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getEcuadorToday();
     const inst = await db.prepare('SELECT coordinator_name FROM institutional_settings WHERE id = 1').get();
     const coordName = inst ? inst.coordinator_name : 'Coordinador Académico';
     const now = new Date().toISOString();

@@ -18,9 +18,18 @@ function calcularHorasRango(inicio, fin) {
   return parseFloat((mins / 60).toFixed(2));
 }
 
+const getEcuadorToday = () => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
+  } catch (e) {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+};
+
 export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
   const currentUser = user || usuario;
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getEcuadorToday();
   const [fecha, setFecha] = useState(todayStr);
 
   // Estado de activación de la jornada por el Coordinador
@@ -185,9 +194,12 @@ export default function DocenteRegistroDiario({ user, usuario, onIrAHoja }) {
   };
 
   const cambiarDia = (delta) => {
-    const d = new Date(fecha + 'T00:00:00');
+    const d = new Date(fecha + 'T12:00:00');
     d.setDate(d.getDate() + delta);
-    setFecha(d.toISOString().split('T')[0]);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    setFecha(`${y}-${m}-${day}`);
   };
 
   const isJornadaHabilitada = shiftControl.shift_mode !== 'CERRADO' && (shiftControl.shift_morning_active !== 0 || shiftControl.shift_afternoon_active !== 0);

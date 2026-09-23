@@ -1,9 +1,16 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, CheckCircle2, BookOpen, Share2, FlaskConical, Briefcase, TrendingUp, AlertCircle, FileText } from 'lucide-react';
 import { getDocenteResumen } from '../api';
 
 export default function DocenteResumen({ usuario, onIrAHoja }) {
-  const currentMonthStr = new Date().toISOString().substring(0, 7);
+  const currentMonthStr = (() => {
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date()).substring(0, 7);
+    } catch (e) {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+  })();
   const [mes, setMes] = useState(currentMonthStr);
   const [resumen, setResumen] = useState(null);
   const [cargando, setCargando] = useState(true);

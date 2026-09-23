@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calendar, 
   Clock, 
@@ -19,8 +19,17 @@ import PilarHorasCard from './PilarHorasCard';
 import MedidorJornada from './MedidorJornada';
 import { saveAsistencia, getAsistencias } from '../api';
 
+const getEcuadorToday = () => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
+  } catch (e) {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+};
+
 export default function RegistroDiario({ profesorActivo, onRegistroGuardado }) {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getEcuadorToday();
   const [fecha, setFecha] = useState(todayStr);
 
   const [horaEntrada, setHoraEntrada] = useState('08:00');
@@ -147,9 +156,12 @@ export default function RegistroDiario({ profesorActivo, onRegistroGuardado }) {
   };
 
   const cambiarDia = (offset) => {
-    const d = new Date(fecha + 'T00:00:00');
+    const d = new Date(fecha + 'T12:00:00');
     d.setDate(d.getDate() + offset);
-    setFecha(d.toISOString().split('T')[0]);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    setFecha(`${y}-${m}-${day}`);
   };
 
   return (

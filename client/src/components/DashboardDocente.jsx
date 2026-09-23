@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   Calendar, 
@@ -15,7 +15,14 @@ import {
 import { getResumenMensual } from '../api';
 
 export default function DashboardDocente({ profesorActivo, onIrARegistro, onIrAHojaOficial }) {
-  const currentMonthStr = new Date().toISOString().substring(0, 7); // '2026-09'
+  const currentMonthStr = (() => {
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date()).substring(0, 7);
+    } catch (e) {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+  })();
   const [mes, setMes] = useState(currentMonthStr);
   const [resumen, setResumen] = useState(null);
   const [cargando, setCargando] = useState(true);

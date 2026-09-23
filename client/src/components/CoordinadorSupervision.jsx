@@ -2,8 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../api';
 import { CheckCircle2, AlertTriangle, Clock, Calendar, Filter, RefreshCw, Lock, Unlock } from 'lucide-react';
 
+const getEcuadorToday = () => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
+  } catch (e) {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+};
+
 export default function CoordinadorSupervision() {
-  const hoyStr = new Date().toISOString().split('T')[0];
+  const hoyStr = getEcuadorToday();
   const [fecha, setFecha] = useState(hoyStr);
   const [filtroCumplimiento, setFiltroCumplimiento] = useState('');
   const [records, setRecords] = useState([]);
@@ -24,7 +33,17 @@ export default function CoordinadorSupervision() {
       }
       const d = new Date(iso);
       if (isNaN(d.getTime())) return timestamp;
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const hoyEcuador = getEcuadorToday();
+      const fechaRegistro = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(d);
+      const horaStr = d.toLocaleTimeString('es-EC', { timeZone: 'America/Guayaquil', hour: '2-digit', minute: '2-digit', hour12: false });
+
+      if (fechaRegistro === hoyEcuador) {
+        return `Hoy ${horaStr}`;
+      } else {
+        const [, m, dia] = fechaRegistro.split('-');
+        return `${dia}/${m} a las ${horaStr}`;
+      }
     } catch (e) {
       return timestamp;
     }

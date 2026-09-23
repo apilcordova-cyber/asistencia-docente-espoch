@@ -15,7 +15,14 @@ import { getReporteMesCompleto } from '../api';
 import { generarPdfOficial, exportarCsvOficial } from '../utils/exportadorPdf';
 
 export default function HojaOficial({ profesorActivo, institucion }) {
-  const currentMonthStr = new Date().toISOString().substring(0, 7);
+  const currentMonthStr = (() => {
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date()).substring(0, 7);
+    } catch (e) {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+  })();
   const [mes, setMes] = useState(currentMonthStr);
   const [reporteData, setReporteData] = useState(null);
   const [cargando, setCargando] = useState(true);

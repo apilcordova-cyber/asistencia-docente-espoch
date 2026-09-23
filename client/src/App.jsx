@@ -99,6 +99,7 @@ export default function App() {
         {isCoordinador ? (
           <>
             {currentTab === 'dashboard' && <CoordinadorDashboard onNavigateTab={setCurrentTab} />}
+            {currentTab === 'asistencia' && <DocenteRegistroDiario user={user} usuario={user} onIrAHoja={() => setCurrentTab('reportes')} />}
             {currentTab === 'docentes' && <CoordinadorDocentes />}
             {currentTab === 'supervision' && <CoordinadorSupervision />}
             {currentTab === 'reportes' && <CoordinadorReportes />}

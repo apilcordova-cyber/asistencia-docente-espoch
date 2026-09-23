@@ -117,6 +117,14 @@ export default function CoordinadorDashboard({ onNavigateTab }) {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => onNavigateTab('asistencia')}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold text-white bg-[#A60809] hover:bg-[#810404] rounded-lg shadow-sm transition-colors cursor-pointer"
+              title="Registrar mi jornada laboral de 8 horas reglamentarias"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              Registrar Mi Asistencia
+            </button>
+            <button
               onClick={cargarDashboard}
               className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-[#D7D6D7] rounded-lg transition-colors cursor-pointer"
             >
